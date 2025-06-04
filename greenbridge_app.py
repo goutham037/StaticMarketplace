@@ -473,6 +473,12 @@ def set_language(language):
 def inject_config():
     return dict(LANGUAGES=app.config['LANGUAGES'])
 
+# Add translation function for templates
+@app.template_global()
+def _(text):
+    """Simple translation function for templates"""
+    return text
+
 # Create tables and sample data
 with app.app_context():
     db.create_all()

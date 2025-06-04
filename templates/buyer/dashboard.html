@@ -2,275 +2,221 @@
 
 {% block title %}{{ _('Buyer Dashboard - GreenBridge') }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .rice-card {
-        transition: all 0.3s ease;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-    }
-    .rice-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    .rice-card.selected {
-        border: 3px solid #198754;
-        box-shadow: 0 4px 15px rgba(25, 135, 84, 0.3);
-    }
-    .rice-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #198754, #20c997);
-        transform: scaleX(0);
-        transition: transform 0.3s ease;
-    }
-    .rice-card.selected::before {
-        transform: scaleX(1);
-    }
-    .quantity-display {
-        font-size: 1.2rem;
-        font-weight: bold;
-        color: #198754;
-    }
-    #map {
-        height: 350px;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255,255,255,0.9);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    }
-    .farmer-card {
-        transition: all 0.3s ease;
-        border-left: 4px solid #198754;
-    }
-    .farmer-card:hover {
-        background-color: #f8f9fa;
-        transform: translateX(5px);
-    }
-    .distance-badge {
-        background: linear-gradient(45deg, #198754, #20c997);
-        color: white;
-        border-radius: 20px;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container py-4">
-    <!-- Header -->
+    <!-- Welcome Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <h1 class="display-6 fw-bold text-success mb-2">
-                <i class="bi bi-speedometer2 me-2"></i>{{ _('Buyer Dashboard') }}
-            </h1>
-            <p class="lead text-muted">{{ _('Welcome %(name)s! Find the best rice deals near you.', name=current_user.full_name) }}</p>
-        </div>
-    </div>
-
-    <!-- Location Section -->
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">
-                <i class="bi bi-geo-alt-fill me-2"></i>{{ _('Your Location') }}
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="d-flex align-items-center mb-3">
-                        <i class="bi bi-pin-map text-success me-2"></i>
-                        <span class="fw-semibold">{{ current_user.location }}</span>
-                    </div>
-                    <div class="btn-group" role="group">
-                        <button class="btn btn-outline-success" onclick="getCurrentLocation()">
-                            <i class="bi bi-geo-alt me-1"></i>{{ _('Update Location') }}
-                        </button>
-                        <button class="btn btn-outline-primary" onclick="toggleMap()">
-                            <i class="bi bi-map me-1"></i>{{ _('View Map') }}
-                        </button>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div id="map" style="display: none;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Rice Selection -->
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">
-                <i class="bi bi-grain me-2"></i>{{ _('Select Rice Type') }}
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-lg-3 col-md-6">
-                    <div class="card rice-card h-100 border-0 shadow-sm" onclick="selectRice('Basmati', this)">
-                        <img src="{{ url_for('static', filename='images/basmati.svg') }}" 
-                             class="card-img-top p-3" 
-                             alt="{{ _('Basmati Rice') }}"
-                             style="height: 150px; object-fit: contain;">
-                        <div class="card-body text-center">
-                            <h6 class="card-title fw-bold">{{ _('Basmati Rice') }}</h6>
-                            <p class="card-text small text-muted">{{ _('Premium long-grain aromatic rice') }}</p>
-                            <span class="badge bg-success">₹60-80/kg</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card rice-card h-100 border-0 shadow-sm" onclick="selectRice('Sona Masoori', this)">
-                        <img src="{{ url_for('static', filename='images/sona-masoori.svg') }}" 
-                             class="card-img-top p-3" 
-                             alt="{{ _('Sona Masoori') }}"
-                             style="height: 150px; object-fit: contain;">
-                        <div class="card-body text-center">
-                            <h6 class="card-title fw-bold">{{ _('Sona Masoori') }}</h6>
-                            <p class="card-text small text-muted">{{ _('Medium-grain rice popular in South India') }}</p>
-                            <span class="badge bg-success">₹40-50/kg</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card rice-card h-100 border-0 shadow-sm" onclick="selectRice('Brown Rice', this)">
-                        <img src="{{ url_for('static', filename='images/brown-rice.svg') }}" 
-                             class="card-img-top p-3" 
-                             alt="{{ _('Brown Rice') }}"
-                             style="height: 150px; object-fit: contain;">
-                        <div class="card-body text-center">
-                            <h6 class="card-title fw-bold">{{ _('Brown Rice') }}</h6>
-                            <p class="card-text small text-muted">{{ _('Whole grain rice with high nutritional value') }}</p>
-                            <span class="badge bg-success">₹50-60/kg</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="card rice-card h-100 border-0 shadow-sm" onclick="selectRice('Ponni', this)">
-                        <div class="card-body text-center d-flex flex-column justify-content-center">
-                            <i class="bi bi-grain text-success mb-2" style="font-size: 3rem;"></i>
-                            <h6 class="card-title fw-bold">{{ _('Ponni Rice') }}</h6>
-                            <p class="card-text small text-muted">{{ _('Traditional South Indian variety') }}</p>
-                            <span class="badge bg-success">₹40-45/kg</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Quantity Selection -->
-    <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">
-                <i class="bi bi-calculator me-2"></i>{{ _('Specify Quantity') }}
-            </h5>
-        </div>
-        <div class="card-body">
-            <div class="row align-items-center">
-                <div class="col-md-6">
-                    <div class="input-group input-group-lg">
-                        <input type="number" 
-                               class="form-control" 
-                               id="quantity" 
-                               min="1" 
-                               step="0.1" 
-                               value="10"
-                               onchange="updateQuantityDisplay()">
-                        <select class="form-select" id="unit" onchange="updateQuantityDisplay()">
-                            <option value="kg">{{ _('Kilograms (kg)') }}</option>
-                            <option value="quintal">{{ _('Quintals') }}</option>
-                            <option value="ton">{{ _('Tons') }}</option>
-                        </select>
-                    </div>
-                    <div class="mt-2">
-                        <small class="text-muted">
-                            {{ _('Equivalent:') }} <span id="quantity-conversion" class="quantity-display">10 kg</span>
-                        </small>
-                    </div>
-                </div>
-                <div class="col-md-6 text-end">
-                    <button class="btn btn-success btn-lg" onclick="findFarmers()" id="search-btn">
-                        <i class="bi bi-search me-2"></i>{{ _('Find Nearby Farmers') }}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Search Results -->
-    <div id="results" class="card border-0 shadow-sm" style="display: none;">
-        <div class="card-header bg-light">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="bi bi-people-fill text-success me-2"></i>{{ _('Available Farmers') }}
-                </h5>
-                <span class="badge bg-success" id="farmer-count">0</span>
-            </div>
-        </div>
-        <div class="card-body position-relative">
-            <div class="loading-overlay" id="loading-overlay">
-                <div class="text-center">
-                    <div class="spinner-border text-success" role="status">
-                        <span class="visually-hidden">{{ _('Loading...') }}</span>
-                    </div>
-                    <p class="mt-2 text-muted">{{ _('Finding farmers near you...') }}</p>
+                <div>
+                    <h1 class="display-6 fw-bold text-success">
+                        <i class="bi bi-speedometer2 me-2"></i>{{ _('Welcome back, ') }}{{ current_user.full_name }}
+                    </h1>
+                    <p class="lead text-muted">{{ _('Find the best rice deals in your area') }}</p>
                 </div>
-            </div>
-            <div id="farmersList">
-                <!-- Farmers will be populated here -->
+                <div>
+                    <a href="{{ url_for('search') }}" class="btn btn-success btn-lg">
+                        <i class="bi bi-search me-2"></i>{{ _('Search Rice') }}
+                    </a>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-search text-success mb-3" style="font-size: 2.5rem;"></i>
-                    <h6>{{ _('Browse All Listings') }}</h6>
-                    <p class="text-muted small">{{ _('View all available rice listings') }}</p>
-                    <a href="{{ url_for('buyer.search') }}" class="btn btn-outline-success">{{ _('Browse') }}</a>
+    <!-- Market Overview Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-primary text-white">
+                <div class="card-body">
+                    <i class="bi bi-bag" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-2">{{ listings|length }}</h3>
+                    <p class="mb-0">{{ _('Available Listings') }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-robot text-success mb-3" style="font-size: 2.5rem;"></i>
-                    <h6>{{ _('AI Assistant') }}</h6>
-                    <p class="text-muted small">{{ _('Get market insights and advice') }}</p>
-                    <a href="{{ url_for('ai.chat') }}" class="btn btn-outline-success">{{ _('Chat Now') }}</a>
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-success text-white">
+                <div class="card-body">
+                    <i class="bi bi-people" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-2">{{ analysis|length }}</h3>
+                    <p class="mb-0">{{ _('Markets Tracked') }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body text-center">
-                    <i class="bi bi-graph-up text-success mb-3" style="font-size: 2.5rem;"></i>
-                    <h6>{{ _('Market Analysis') }}</h6>
-                    <p class="text-muted small">{{ _('View price trends and forecasts') }}</p>
-                    <a href="{{ url_for('ai.market_analysis') }}" class="btn btn-outline-success">{{ _('Analyze') }}</a>
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-info text-white">
+                <div class="card-body">
+                    <i class="bi bi-currency-rupee" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-2">₹{{ "%.0f"|format((listings|map(attribute='price_per_kg')|list|sum)/(listings|length)) if listings else 0 }}</h3>
+                    <p class="mb-0">{{ _('Avg Price/kg') }}</p>
                 </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-warning text-white">
+                <div class="card-body">
+                    <i class="bi bi-geo-alt" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-2">{{ current_user.location.split(',')[0] }}</h3>
+                    <p class="mb-0">{{ _('Your Location') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Listings -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul me-2"></i>{{ _('Available Rice Listings') }}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if listings %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>{{ _('Rice Type') }}</th>
+                                        <th>{{ _('Variety') }}</th>
+                                        <th>{{ _('Quantity') }}</th>
+                                        <th>{{ _('Price/kg') }}</th>
+                                        <th>{{ _('Quality') }}</th>
+                                        <th>{{ _('Seller') }}</th>
+                                        <th>{{ _('Action') }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for listing in listings %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="bi bi-grain text-success me-2"></i>
+                                                <strong>{{ listing.rice_type }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>{{ listing.variety or '-' }}</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark">{{ listing.quantity }} kg</span>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold text-success">₹{{ listing.price_per_kg }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if listing.quality_grade == 'A' %}success{% elif listing.quality_grade == 'B' %}warning{% else %}secondary{% endif %}">
+                                                Grade {{ listing.quality_grade }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <div class="fw-semibold">{{ listing.seller.full_name }}</div>
+                                                <small class="text-muted">{{ listing.seller.location }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-success" onclick="viewListing({{ listing.id }})">
+                                                <i class="bi bi-eye me-1"></i>{{ _('View') }}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 text-muted">{{ _('No listings available') }}</h5>
+                            <p class="text-muted">{{ _('Check back later for new rice listings') }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Market Analysis Sidebar -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-lightning me-1"></i>{{ _('Quick Actions') }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('search') }}" class="btn btn-outline-success">
+                            <i class="bi bi-search me-2"></i>{{ _('Advanced Search') }}
+                        </a>
+                        <a href="{{ url_for('chat') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-robot me-2"></i>{{ _('AI Assistant') }}
+                        </a>
+                        <a href="{{ url_for('market_analysis') }}" class="btn btn-outline-info">
+                            <i class="bi bi-graph-up me-2"></i>{{ _('Market Analysis') }}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Market Trends -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="bi bi-graph-up me-1"></i>{{ _('Market Trends') }}
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if analysis %}
+                        {% for rice_type, data in analysis.items() %}
+                        <div class="mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">{{ rice_type }}</h6>
+                                <span class="badge bg-{% if data.price_trend == 'increasing' %}danger{% elif data.price_trend == 'decreasing' %}success{% else %}secondary{% endif %}">
+                                    {% if data.price_trend == 'increasing' %}
+                                        <i class="bi bi-arrow-up"></i>
+                                    {% elif data.price_trend == 'decreasing' %}
+                                        <i class="bi bi-arrow-down"></i>
+                                    {% else %}
+                                        <i class="bi bi-arrow-right"></i>
+                                    {% endif %}
+                                    {{ data.price_trend|title }}
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{{ _('Avg Price:') }}</span>
+                                <span class="fw-bold">₹{{ data.average_price }}/kg</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span class="text-muted">{{ _('Demand:') }}</span>
+                                <span class="badge bg-{% if data.demand_level == 'high' %}success{% elif data.demand_level == 'medium' %}warning{% else %}secondary{% endif %}">
+                                    {{ data.demand_level|title }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="bi bi-graph-up" style="font-size: 2rem;"></i>
+                            <p class="mt-2 mb-0">{{ _('Market data loading...') }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Listing Details Modal -->
+<div class="modal fade" id="listingModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ _('Rice Listing Details') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="listingModalBody">
+                <!-- Listing details will be loaded here -->
             </div>
         </div>
     </div>
@@ -279,268 +225,43 @@
 
 {% block extra_js %}
 <script>
-let map;
-let marker;
-let selectedRice = '';
-let currentSearchRequest = null;
-
-// Initialize map
-function initMap() {
-    {% if current_user.latitude and current_user.longitude %}
-        const userLocation = [{{ current_user.latitude }}, {{ current_user.longitude }}];
-    {% else %}
-        const userLocation = [20.5937, 78.9629]; // Center of India
-    {% endif %}
-    
-    map = L.map('map').setView(userLocation, 12);
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    marker = L.marker(userLocation, {
-        draggable: true
-    }).addTo(map);
-
-    marker.on('dragend', function(event) {
-        const position = marker.getLatLng();
-        updateUserLocation(position);
-    });
-}
-
-function toggleMap() {
-    const mapElement = document.getElementById('map');
-    if (mapElement.style.display === 'none') {
-        mapElement.style.display = 'block';
-        if (!map) {
-            setTimeout(initMap, 100);
-        }
-    } else {
-        mapElement.style.display = 'none';
-    }
-}
-
-function getCurrentLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                
-                if (!map) {
-                    document.getElementById('map').style.display = 'block';
-                    setTimeout(() => {
-                        initMap();
-                        marker.setLatLng([lat, lng]);
-                        map.setView([lat, lng], 13);
-                    }, 100);
-                } else {
-                    marker.setLatLng([lat, lng]);
-                    map.setView([lat, lng], 13);
-                }
-                
-                updateUserLocation(L.latLng(lat, lng));
-            },
-            (error) => {
-                alert("{{ _('Error getting location. Please select manually on the map.') }}");
-            }
-        );
-    } else {
-        alert("{{ _('Geolocation is not supported by your browser.') }}");
-    }
-}
-
-function updateUserLocation(latlng) {
-    // In a real app, you would update the user's location in the database
-    console.log('Updated location:', latlng.lat, latlng.lng);
-}
-
-function selectRice(type, element) {
-    selectedRice = type;
-    
-    // Remove selected class from all cards
-    document.querySelectorAll('.rice-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Add selected class to clicked card
-    element.classList.add('selected');
-    
-    // Update button state
-    updateSearchButton();
-}
-
-function updateQuantityDisplay() {
-    const quantity = parseFloat(document.getElementById('quantity').value) || 0;
-    const unit = document.getElementById('unit').value;
-    
-    let kgEquivalent = quantity;
-    if (unit === 'quintal') {
-        kgEquivalent = quantity * 100;
-    } else if (unit === 'ton') {
-        kgEquivalent = quantity * 1000;
-    }
-    
-    document.getElementById('quantity-conversion').textContent = `${kgEquivalent.toLocaleString()} kg`;
-    updateSearchButton();
-}
-
-function updateSearchButton() {
-    const btn = document.getElementById('search-btn');
-    const quantity = parseFloat(document.getElementById('quantity').value) || 0;
-    
-    if (selectedRice && quantity > 0) {
-        btn.disabled = false;
-        btn.innerHTML = `<i class="bi bi-search me-2"></i>{{ _('Find') }} ${selectedRice} {{ _('Farmers') }}`;
-    } else {
-        btn.disabled = true;
-        btn.innerHTML = `<i class="bi bi-search me-2"></i>{{ _('Find Nearby Farmers') }}`;
-    }
-}
-
-function findFarmers() {
-    if (!selectedRice) {
-        alert("{{ _('Please select a rice type first.') }}");
-        return;
-    }
-
-    const quantity = parseFloat(document.getElementById('quantity').value);
-    const unit = document.getElementById('unit').value;
-    
-    if (!quantity || quantity <= 0) {
-        alert("{{ _('Please enter a valid quantity.') }}");
-        return;
-    }
-
-    // Show results section and loading
-    document.getElementById('results').style.display = 'block';
-    document.getElementById('loading-overlay').style.display = 'flex';
-    
-    // Scroll to results
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
-
-    // Cancel previous request if any
-    if (currentSearchRequest) {
-        currentSearchRequest.abort();
-    }
-
-    // Create new request
-    currentSearchRequest = new AbortController();
-
-    // Make API call
-    fetch('{{ url_for("buyer.find_farmers") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            riceType: selectedRice,
-            quantity: quantity,
-            unit: unit,
-            location: "{{ current_user.location }}"
-        }),
-        signal: currentSearchRequest.signal
-    })
-    .then(response => response.json())
-    .then(data => {
-        displayFarmers(data.farmers || []);
-    })
-    .catch(error => {
-        if (error.name !== 'AbortError') {
-            console.error('Error:', error);
-            document.getElementById('farmersList').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="bi bi-exclamation-triangle me-2"></i>
-                    {{ _('Error finding farmers. Please try again.') }}
-                </div>
-            `;
-        }
-    })
-    .finally(() => {
-        document.getElementById('loading-overlay').style.display = 'none';
-        currentSearchRequest = null;
-    });
-}
-
-function displayFarmers(farmers) {
-    const farmersList = document.getElementById('farmersList');
-    const farmerCount = document.getElementById('farmer-count');
-    
-    farmerCount.textContent = farmers.length;
-    
-    if (farmers.length === 0) {
-        farmersList.innerHTML = `
-            <div class="text-center py-5">
-                <i class="bi bi-search text-muted mb-3" style="font-size: 3rem;"></i>
-                <h6 class="text-muted">{{ _('No farmers found') }}</h6>
-                <p class="text-muted">{{ _('Try adjusting your search criteria or check back later.') }}</p>
-                <a href="{{ url_for('buyer.search') }}" class="btn btn-outline-success">
-                    {{ _('Browse All Listings') }}
-                </a>
-            </div>
-        `;
-        return;
-    }
-
-    farmersList.innerHTML = farmers.map(farmer => `
-        <div class="farmer-card mb-3 p-3 border rounded">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <div class="d-flex align-items-center mb-2">
-                        <i class="bi bi-person-circle text-success me-2"></i>
-                        <h6 class="mb-0 fw-bold">${farmer.name}</h6>
-                        <span class="distance-badge ms-2">${farmer.distance} km</span>
-                    </div>
-                    <p class="text-muted mb-1">
-                        <i class="bi bi-geo-alt me-1"></i>${farmer.location}
-                    </p>
-                    <div class="row text-sm">
-                        <div class="col-sm-6">
-                            <strong>{{ _('Available:') }}</strong> ${farmer.available_quantity.toLocaleString()} kg
-                        </div>
-                        <div class="col-sm-6">
-                            <strong>{{ _('Price:') }}</strong> ₹${farmer.price_per_kg}/kg
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4 text-end">
-                    <button class="btn btn-success btn-sm" onclick="contactFarmer('${farmer.id}', '${farmer.name}')">
-                        <i class="bi bi-telephone me-1"></i>{{ _('Contact') }}
-                    </button>
-                </div>
+function viewListing(listingId) {
+    // Show listing details in modal
+    const modal = new bootstrap.Modal(document.getElementById('listingModal'));
+    document.getElementById('listingModalBody').innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
             </div>
         </div>
-    `).join('');
+    `;
+    modal.show();
+    
+    // Simulate loading listing details
+    setTimeout(() => {
+        document.getElementById('listingModalBody').innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>Rice Details</h6>
+                    <p><strong>Type:</strong> Premium Basmati</p>
+                    <p><strong>Quality:</strong> Grade A</p>
+                    <p><strong>Quantity:</strong> 1000 kg</p>
+                    <p><strong>Price:</strong> ₹55/kg</p>
+                </div>
+                <div class="col-md-6">
+                    <h6>Seller Information</h6>
+                    <p><strong>Name:</strong> Ravi Kumar</p>
+                    <p><strong>Location:</strong> Guntur, AP</p>
+                    <p><strong>Contact:</strong> 9876543210</p>
+                </div>
+            </div>
+            <div class="text-end mt-3">
+                <button class="btn btn-success">
+                    <i class="bi bi-telephone me-1"></i>Contact Seller
+                </button>
+            </div>
+        `;
+    }, 1000);
 }
-
-function contactFarmer(farmerId, farmerName) {
-    if (confirm(`{{ _('Contact %(farmer_name)s?', farmer_name='${farmerName}') }}`)) {
-        fetch(`{{ url_for('buyer.contact_farmer', farmer_id='') }}${farmerId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(`{{ _('Success!') }} ${data.message}\n{{ _('Mobile:') }} ${data.farmer_mobile}`);
-            } else {
-                alert("{{ _('Error contacting farmer. Please try again.') }}");
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert("{{ _('Error contacting farmer. Please try again.') }}");
-        });
-    }
-}
-
-// Initialize
-document.addEventListener('DOMContentLoaded', function() {
-    updateQuantityDisplay();
-    updateSearchButton();
-});
 </script>
 {% endblock %}

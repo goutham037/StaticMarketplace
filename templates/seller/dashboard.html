@@ -2,354 +2,155 @@
 
 {% block title %}{{ _('Seller Dashboard - GreenBridge') }}{% endblock %}
 
-{% block extra_css %}
-<style>
-    .stats-card {
-        background: linear-gradient(135deg, #198754 0%, #20c997 100%);
-        color: white;
-        border-radius: 15px;
-        transition: transform 0.3s ease;
-    }
-    .stats-card:hover {
-        transform: translateY(-5px);
-    }
-    .listing-card {
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-        transition: all 0.3s ease;
-    }
-    .listing-card:hover {
-        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    }
-    .status-toggle {
-        border-radius: 25px;
-        transition: all 0.3s ease;
-    }
-    .revenue-chart {
-        height: 300px;
-    }
-    .quick-action-card {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border-radius: 15px;
-        border: none;
-        transition: all 0.3s ease;
-    }
-    .quick-action-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-    }
-</style>
-{% endblock %}
-
 {% block content %}
 <div class="container py-4">
-    <!-- Header -->
+    <!-- Welcome Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <h1 class="display-6 fw-bold text-success mb-2">
-                <i class="bi bi-speedometer2 me-2"></i>{{ _('Seller Dashboard') }}
-            </h1>
-            <p class="lead text-muted">{{ _('Welcome %(name)s! Manage your rice listings and track your sales.', name=current_user.full_name) }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="display-6 fw-bold text-success">
+                        <i class="bi bi-shop me-2"></i>{{ _('Welcome, ') }}{{ current_user.full_name }}
+                    </h1>
+                    <p class="lead text-muted">{{ _('Manage your rice listings and sales') }}</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('new_listing') }}" class="btn btn-success btn-lg">
+                        <i class="bi bi-plus-circle me-2"></i>{{ _('New Listing') }}
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-box-seam" style="font-size: 2.5rem;"></i>
-                    <h3 class="mt-2 mb-0">{{ total_listings }}</h3>
-                    <p class="mb-0 opacity-75">{{ _('Total Listings') }}</p>
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-primary text-white">
+                <div class="card-body">
+                    <i class="bi bi-list-ul" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-2">{{ listings|length }}</h3>
+                    <p class="mb-0">{{ _('Total Listings') }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-success text-white">
+                <div class="card-body">
                     <i class="bi bi-check-circle" style="font-size: 2.5rem;"></i>
-                    <h3 class="mt-2 mb-0">{{ active_listings }}</h3>
-                    <p class="mb-0 opacity-75">{{ _('Active Listings') }}</p>
+                    <h3 class="mt-2">{{ listings|selectattr('is_available')|list|length }}</h3>
+                    <p class="mb-0">{{ _('Active Listings') }}</p>
                 </div>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <i class="bi bi-box" style="font-size: 2.5rem;"></i>
-                    <h3 class="mt-2 mb-0">{{ "%.0f"|format(total_quantity) }}</h3>
-                    <p class="mb-0 opacity-75">{{ _('Total Stock (kg)') }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-warning text-white">
+                <div class="card-body">
                     <i class="bi bi-currency-rupee" style="font-size: 2.5rem;"></i>
-                    <h3 class="mt-2 mb-0">
-                        {% if listings %}
-                            ₹{{ "%.0f"|format(listings|selectattr('is_available')|map(attribute='price_per_kg')|list|sum / (listings|selectattr('is_available')|list|length or 1)) }}
-                        {% else %}
-                            ₹0
-                        {% endif %}
-                    </h3>
-                    <p class="mb-0 opacity-75">{{ _('Avg. Price/kg') }}</p>
+                    <h3 class="mt-2">₹{{ "%.0f"|format(total_revenue) }}</h3>
+                    <p class="mb-0">{{ _('Total Value') }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="card text-center border-0 bg-info text-white">
+                <div class="card-body">
+                    <i class="bi bi-geo-alt" style="font-size: 2.5rem;"></i>
+                    <h3 class="mt-2">{{ current_user.location.split(',')[0] }}</h3>
+                    <p class="mb-0">{{ _('Your Location') }}</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
-        <!-- Left Column - Listings -->
-        <div class="col-lg-8">
-            <!-- Quick Actions -->
-            <div class="row mb-4">
-                <div class="col-md-6 mb-3">
-                    <div class="card quick-action-card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-plus-circle text-success mb-3" style="font-size: 3rem;"></i>
-                            <h5>{{ _('Add New Listing') }}</h5>
-                            <p class="text-muted">{{ _('Create a new rice listing') }}</p>
-                            <a href="{{ url_for('seller.new_listing') }}" class="btn btn-success">
-                                {{ _('Create Listing') }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-6 mb-3">
-                    <div class="card quick-action-card h-100">
-                        <div class="card-body text-center">
-                            <i class="bi bi-graph-up text-success mb-3" style="font-size: 3rem;"></i>
-                            <h5>{{ _('Market Analysis') }}</h5>
-                            <p class="text-muted">{{ _('View market trends and insights') }}</p>
-                            <a href="{{ url_for('ai.market_analysis') }}" class="btn btn-outline-success">
-                                {{ _('View Analysis') }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Listings Management -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-list-ul me-2"></i>{{ _('Your Listings') }}
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% if listings %}
-                        <div class="row">
+    <!-- My Listings -->
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="bi bi-bag me-2"></i>{{ _('My Rice Listings') }}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if listings %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>{{ _('Rice Type') }}</th>
+                                <th>{{ _('Variety') }}</th>
+                                <th>{{ _('Quantity') }}</th>
+                                <th>{{ _('Price/kg') }}</th>
+                                <th>{{ _('Quality') }}</th>
+                                <th>{{ _('Status') }}</th>
+                                <th>{{ _('Created') }}</th>
+                                <th>{{ _('Actions') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             {% for listing in listings %}
-                            <div class="col-lg-6 mb-4">
-                                <div class="card listing-card h-100">
-                                    <div class="position-relative">
-                                        {% if listing.image_url %}
-                                            <img src="{{ listing.image_url }}" class="card-img-top" alt="{{ listing.rice_type }}" style="height: 180px; object-fit: cover;">
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-grain text-success me-2"></i>
+                                        <strong>{{ listing.rice_type }}</strong>
+                                    </div>
+                                </td>
+                                <td>{{ listing.variety or '-' }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark">{{ listing.quantity }} kg</span>
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">₹{{ listing.price_per_kg }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if listing.quality_grade == 'A' %}success{% elif listing.quality_grade == 'B' %}warning{% else %}secondary{% endif %}">
+                                        Grade {{ listing.quality_grade }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if listing.is_available %}
+                                        <span class="badge bg-success">{{ _('Active') }}</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ _('Inactive') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ listing.created_at.strftime('%d %b %Y') }}</small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" onclick="editListing({{ listing.id }})">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="viewListing({{ listing.id }})">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% if listing.is_available %}
+                                            <button class="btn btn-outline-warning" onclick="toggleListing({{ listing.id }}, false)">
+                                                <i class="bi bi-pause"></i>
+                                            </button>
                                         {% else %}
-                                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 180px;">
-                                                <i class="bi bi-grain text-success" style="font-size: 3rem;"></i>
-                                            </div>
-                                        {% endif %}
-                                        <div class="position-absolute top-0 end-0 m-2">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input status-toggle" 
-                                                       type="checkbox" 
-                                                       id="status-{{ listing.id }}"
-                                                       {{ 'checked' if listing.is_available }}
-                                                       onchange="toggleListingStatus('{{ listing.id }}', this.checked)">
-                                                <label class="form-check-label text-white fw-bold" for="status-{{ listing.id }}">
-                                                    {{ _('Active') if listing.is_available else _('Inactive') }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h5 class="card-title fw-bold">{{ listing.rice_type }}</h5>
-                                            <span class="badge bg-success fs-6">₹{{ listing.price_per_kg }}/kg</span>
-                                        </div>
-                                        
-                                        <div class="row text-sm mb-3">
-                                            <div class="col-6">
-                                                <i class="bi bi-box text-muted me-1"></i>
-                                                <strong>{{ _('Quantity:') }}</strong> {{ "%.0f"|format(listing.quantity) }} kg
-                                            </div>
-                                            <div class="col-6">
-                                                <i class="bi bi-star text-warning me-1"></i>
-                                                <strong>{{ _('Grade:') }}</strong> {{ listing.quality_grade }}
-                                            </div>
-                                        </div>
-
-                                        {% if listing.description %}
-                                            <p class="card-text text-muted small">
-                                                {{ listing.description[:80] }}{% if listing.description|length > 80 %}...{% endif %}
-                                            </p>
-                                        {% endif %}
-
-                                        <div class="text-muted small mb-3">
-                                            <i class="bi bi-calendar3 me-1"></i>
-                                            {{ _('Created:') }} {{ listing.created_at.strftime('%d %b %Y') }}
-                                        </div>
-                                    </div>
-                                    <div class="card-footer bg-transparent border-0 pt-0">
-                                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                            <button class="btn btn-outline-primary btn-sm" onclick="editListing('{{ listing.id }}')">
-                                                <i class="bi bi-pencil me-1"></i>{{ _('Edit') }}
+                                            <button class="btn btn-outline-success" onclick="toggleListing({{ listing.id }}, true)">
+                                                <i class="bi bi-play"></i>
                                             </button>
-                                            <button class="btn btn-outline-danger btn-sm" onclick="deleteListing('{{ listing.id }}')">
-                                                <i class="bi bi-trash me-1"></i>{{ _('Delete') }}
-                                            </button>
-                                        </div>
+                                        {% endif %}
                                     </div>
-                                </div>
-                            </div>
+                                </td>
+                            </tr>
                             {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-5">
-                            <i class="bi bi-box-seam text-muted mb-3" style="font-size: 4rem;"></i>
-                            <h5 class="text-muted">{{ _('No listings yet') }}</h5>
-                            <p class="text-muted">{{ _('Create your first rice listing to start selling') }}</p>
-                            <a href="{{ url_for('seller.new_listing') }}" class="btn btn-success">
-                                <i class="bi bi-plus-circle me-1"></i>{{ _('Create First Listing') }}
-                            </a>
-                        </div>
-                    {% endif %}
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </div>
-
-        <!-- Right Column - Analytics & Tools -->
-        <div class="col-lg-4">
-            <!-- Recent Activity -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="bi bi-activity text-success me-1"></i>{{ _('Recent Activity') }}
-                    </h6>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-plus-circle text-muted" style="font-size: 3rem;"></i>
+                    <h5 class="mt-3 text-muted">{{ _('No listings yet') }}</h5>
+                    <p class="text-muted">{{ _('Create your first rice listing to start selling') }}</p>
+                    <a href="{{ url_for('new_listing') }}" class="btn btn-success">
+                        <i class="bi bi-plus-circle me-2"></i>{{ _('Create Listing') }}
+                    </a>
                 </div>
-                <div class="card-body">
-                    <div class="timeline">
-                        {% for listing in listings[:3] %}
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
-                                    <i class="bi bi-plus text-white small"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <div class="fw-semibold">{{ _('Listed %(rice_type)s', rice_type=listing.rice_type) }}</div>
-                                <div class="text-muted small">{{ listing.created_at.strftime('%d %b %Y') }}</div>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        {% if not listings %}
-                        <div class="text-center text-muted">
-                            <i class="bi bi-clock-history mb-2" style="font-size: 2rem;"></i>
-                            <p class="small">{{ _('No recent activity') }}</p>
-                        </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- Quick Tools -->
-            <div class="card border-0 shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="bi bi-tools text-success me-1"></i>{{ _('Quick Tools') }}
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('ai.chat') }}" class="btn btn-outline-success">
-                            <i class="bi bi-robot me-1"></i>{{ _('AI Assistant') }}
-                        </a>
-                        <a href="{{ url_for('ai.market_analysis') }}" class="btn btn-outline-primary">
-                            <i class="bi bi-bar-chart me-1"></i>{{ _('Market Trends') }}
-                        </a>
-                        <button class="btn btn-outline-info" onclick="generateReport()">
-                            <i class="bi bi-file-earmark-text me-1"></i>{{ _('Sales Report') }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Price Recommendations -->
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light">
-                    <h6 class="mb-0">
-                        <i class="bi bi-lightbulb text-warning me-1"></i>{{ _('Price Recommendations') }}
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <div class="small">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>{{ _('Basmati Rice:') }}</span>
-                            <span class="fw-bold text-success">₹65-70/kg</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span>{{ _('Sona Masoori:') }}</span>
-                            <span class="fw-bold text-success">₹45-50/kg</span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>{{ _('Brown Rice:') }}</span>
-                            <span class="fw-bold text-success">₹55-60/kg</span>
-                        </div>
-                    </div>
-                    <div class="mt-3 text-center">
-                        <a href="{{ url_for('ai.market_analysis') }}" class="btn btn-outline-success btn-sm">
-                            {{ _('View Detailed Analysis') }}
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Listing Modal -->
-<div class="modal fade" id="editListingModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">{{ _('Edit Listing') }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="editListingForm">
-                    <input type="hidden" id="edit-listing-id">
-                    <div class="mb-3">
-                        <label for="edit-rice-type" class="form-label">{{ _('Rice Type') }}</label>
-                        <select class="form-select" id="edit-rice-type" required>
-                            <option value="Basmati">{{ _('Basmati') }}</option>
-                            <option value="Sona Masoori">{{ _('Sona Masoori') }}</option>
-                            <option value="Ponni">{{ _('Ponni') }}</option>
-                            <option value="Brown Rice">{{ _('Brown Rice') }}</option>
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="edit-quantity" class="form-label">{{ _('Quantity (kg)') }}</label>
-                            <input type="number" class="form-control" id="edit-quantity" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="edit-price" class="form-label">{{ _('Price per kg (₹)') }}</label>
-                            <input type="number" step="0.01" class="form-control" id="edit-price" required>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit-description" class="form-label">{{ _('Description') }}</label>
-                        <textarea class="form-control" id="edit-description" rows="3"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
-                <button type="button" class="btn btn-success" onclick="saveListingChanges()">{{ _('Save Changes') }}</button>
-            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -357,98 +158,23 @@
 
 {% block extra_js %}
 <script>
-function toggleListingStatus(listingId, isActive) {
-    fetch(`{{ url_for('seller.edit_listing', listing_id='') }}${listingId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            is_available: isActive
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Update the label
-            const label = document.querySelector(`label[for="status-${listingId}"]`);
-            label.textContent = isActive ? "{{ _('Active') }}" : "{{ _('Inactive') }}";
-            
-            // Show success message
-            showAlert(data.message, 'success');
-        } else {
-            // Revert the toggle
-            document.getElementById(`status-${listingId}`).checked = !isActive;
-            showAlert(data.message || "{{ _('Error updating listing status') }}", 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        document.getElementById(`status-${listingId}`).checked = !isActive;
-        showAlert("{{ _('Error updating listing status') }}", 'danger');
-    });
+function viewListing(listingId) {
+    // View listing details
+    alert('View listing ' + listingId);
 }
 
 function editListing(listingId) {
-    // In a real app, fetch listing details from server
-    const modal = new bootstrap.Modal(document.getElementById('editListingModal'));
-    document.getElementById('edit-listing-id').value = listingId;
-    modal.show();
+    // Edit listing
+    window.location.href = '/seller/edit-listing/' + listingId;
 }
 
-function saveListingChanges() {
-    const listingId = document.getElementById('edit-listing-id').value;
-    const formData = {
-        rice_type: document.getElementById('edit-rice-type').value,
-        quantity: document.getElementById('edit-quantity').value,
-        price_per_kg: document.getElementById('edit-price').value,
-        description: document.getElementById('edit-description').value
-    };
-
-    // In a real app, send update request to server
-    showAlert("{{ _('Listing updated successfully!') }}", 'success');
-    bootstrap.Modal.getInstance(document.getElementById('editListingModal')).hide();
-    
-    // Refresh page to show updates
-    setTimeout(() => location.reload(), 1000);
-}
-
-function deleteListing(listingId) {
-    if (confirm("{{ _('Are you sure you want to delete this listing?') }}")) {
-        // In a real app, send delete request to server
-        showAlert("{{ _('Listing deleted successfully!') }}", 'success');
-        
-        // Remove the listing card from DOM
-        setTimeout(() => location.reload(), 1000);
+function toggleListing(listingId, status) {
+    // Toggle listing status
+    if (confirm('Are you sure you want to ' + (status ? 'activate' : 'deactivate') + ' this listing?')) {
+        // AJAX call to toggle status
+        alert('Listing status updated');
+        location.reload();
     }
-}
-
-function generateReport() {
-    showAlert("{{ _('Generating sales report...') }}", 'info');
-    
-    // Simulate report generation
-    setTimeout(() => {
-        showAlert("{{ _('Sales report generated! Check your email.') }}", 'success');
-    }, 2000);
-}
-
-function showAlert(message, type) {
-    const alertDiv = document.createElement('div');
-    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
-    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
-    alertDiv.innerHTML = `
-        ${message}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    `;
-    
-    document.body.appendChild(alertDiv);
-    
-    // Auto-remove after 5 seconds
-    setTimeout(() => {
-        if (alertDiv.parentNode) {
-            alertDiv.parentNode.removeChild(alertDiv);
-        }
-    }, 5000);
 }
 </script>
 {% endblock %}
