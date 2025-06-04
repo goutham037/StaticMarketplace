@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Search Rice Listings - GreenBridge') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .search-filters {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+    }
+    .listing-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .listing-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    }
+    .price-badge {
+        background: linear-gradient(45deg, #198754, #20c997);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    .distance-indicator {
+        background: rgba(25, 135, 84, 0.1);
+        color: #198754;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    #map {
+        height: 400px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .filter-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    .seller-info {
+        background: rgba(25, 135, 84, 0.05);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    .loading-state {
+        display: none;
+        text-align: center;
+        padding: 3rem;
+    }
+    .no-results {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-success mb-2">
+                <i class="bi bi-search me-2"></i>{{ _('Search Rice Listings') }}
+            </h1>
+            <p class="lead text-muted">{{ _('Find the best rice deals from verified farmers near you') }}</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Filters Sidebar -->
+        <div class="col-lg-3 mb-4">
+            <div class="filter-card sticky-top" style="top: 2rem;">
+                <!-- Search Filters -->
+                <div class="search-filters mb-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-funnel text-success me-2"></i>{{ _('Search Filters') }}
+                    </h5>
+                    <form id="searchForm" method="GET">
+                        <div class="mb-3">
+                            <label for="rice_type" class="form-label fw-semibold">{{ _('Rice Type') }}</label>
+                            <select class="form-select" id="rice_type" name="rice_type" onchange="applyFilters()">
+                                <option value="">{{ _('All Types') }}</option>
+                                <option value="Basmati" {{ 'selected' if selected_rice_type == 'Basmati' }}>{{ _('Basmati') }}</option>
+                                <option value="Sona Masoori" {{ 'selected' if selected_rice_type == 'Sona Masoori' }}>{{ _('Sona Masoori') }}</option>
+                                <option value="Ponni" {{ 'selected' if selected_rice_type == 'Ponni' }}>{{ _('Ponni') }}</option>
+                                <option value="Brown Rice" {{ 'selected' if selected_rice_type == 'Brown Rice' }}>{{ _('Brown Rice') }}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="max_distance" class="form-label fw-semibold">{{ _('Maximum Distance') }}</label>
+                            <select class="form-select" id="max_distance" name="max_distance" onchange="applyFilters()">
+                                <option value="10">{{ _('Within 10 km') }}</option>
+                                <option value="25" selected>{{ _('Within 25 km') }}</option>
+                                <option value="50">{{ _('Within 50 km') }}</option>
+                                <option value="100">{{ _('Within 100 km') }}</option>
+                                <option value="">{{ _('Any Distance') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="min_quantity" class="form-label fw-semibold">{{ _('Minimum Quantity (kg)') }}</label>
+                            <input type="number" class="form-control" id="min_quantity" name="min_quantity" 
+                                   min="1" placeholder="{{ _('Any quantity') }}" onchange="applyFilters()">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="max_price" class="form-label fw-semibold">{{ _('Maximum Price (₹/kg)') }}</label>
+                            <input type="number" class="form-control" id="max_price" name="max_price" 
+                                   min="1" placeholder="{{ _('Any price') }}" onchange="applyFilters()">
+                        </div>
+
+                        <button type="button" class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                            <i class="bi bi-arrow-counterclockwise me-1"></i>{{ _('Clear Filters') }}
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="bi bi-bar-chart me-1"></i>{{ _('Search Results') }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">{{ _('Total Listings:') }}</span>
+                            <span class="fw-bold" id="total-listings">{{ listings|length }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">{{ _('Avg Price:') }}</span>
+                            <span class="fw-bold" id="avg-price">
+                                {% if listings %}
+                                    ₹{{ "%.0f"|format((listings|sum(attribute='price_per_kg')/listings|length)) }}/kg
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="text-muted">{{ _('Total Stock:') }}</span>
+                            <span class="fw-bold" id="total-stock">
+                                {% if listings %}
+                                    {{ "%.0f"|format(listings|sum(attribute='quantity')) }} kg
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-9">
+            <!-- Map View -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-map text-success me-2"></i>{{ _('Map View') }}
+                        </h5>
+                        <button class="btn btn-outline-success btn-sm" onclick="toggleMapView()">
+                            <i class="bi bi-arrows-expand me-1"></i>{{ _('Toggle Map') }}
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading-state" class="loading-state">
+                <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">{{ _('Loading...') }}</span>
+                </div>
+                <p class="mt-3 text-muted">{{ _('Searching for listings...') }}</p>
+            </div>
+
+            <!-- Listings Grid -->
+            <div id="listings-container">
+                {% if listings %}
+                    <div class="row" id="listings-grid">
+                        {% for listing in listings %}
+                        <div class="col-lg-6 mb-4 listing-item" 
+                             data-rice-type="{{ listing.rice_type }}" 
+                             data-price="{{ listing.price_per_kg }}"
+                             data-quantity="{{ listing.quantity }}"
+                             data-distance="{{ listing.distance if listing.distance else 999 }}">
+                            <div class="card listing-card h-100">
+                                <div class="position-relative">
+                                    {% if listing.image_url %}
+                                        <img src="{{ listing.image_url }}" class="card-img-top" alt="{{ listing.rice_type }}" style="height: 200px; object-fit: cover;">
+                                    {% else %}
+                                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                            <i class="bi bi-grain text-success" style="font-size: 4rem;"></i>
+                                        </div>
+                                    {% endif %}
+                                    {% if hasattr(listing, 'distance') and listing.distance %}
+                                        <span class="position-absolute top-0 end-0 m-2 distance-indicator">
+                                            {{ "%.1f"|format(listing.distance) }} km
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <h5 class="card-title fw-bold">{{ listing.rice_type }}</h5>
+                                        <span class="price-badge">₹{{ listing.price_per_kg }}/kg</span>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <div class="row text-sm">
+                                            <div class="col-6">
+                                                <i class="bi bi-box text-muted me-1"></i>
+                                                <strong>{{ _('Quantity:') }}</strong> {{ "%.0f"|format(listing.quantity) }} kg
+                                            </div>
+                                            <div class="col-6">
+                                                <i class="bi bi-star text-warning me-1"></i>
+                                                <strong>{{ _('Grade:') }}</strong> {{ listing.quality_grade }}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if listing.description %}
+                                        <p class="card-text text-muted small">
+                                            {{ listing.description[:100] }}{% if listing.description|length > 100 %}...{% endif %}
+                                        </p>
+                                    {% endif %}
+
+                                    <div class="seller-info">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-person-circle text-success me-2"></i>
+                                            <strong>{{ listing.seller.full_name }}</strong>
+                                        </div>
+                                        <div class="d-flex align-items-center text-muted small">
+                                            <i class="bi bi-geo-alt me-1"></i>
+                                            {{ listing.seller.location }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer bg-transparent border-0 pt-0">
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                        <button class="btn btn-outline-success" onclick="contactSeller('{{ listing.seller_id }}', '{{ listing.seller.full_name }}')">
+                                            <i class="bi bi-telephone me-1"></i>{{ _('Contact') }}
+                                        </button>
+                                        <button class="btn btn-success" onclick="viewDetails('{{ listing.id }}')">
+                                            <i class="bi bi-eye me-1"></i>{{ _('View Details') }}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="no-results">
+                        <i class="bi bi-search" style="font-size: 4rem; color: #dee2e6;"></i>
+                        <h4 class="mt-3">{{ _('No listings found') }}</h4>
+                        <p>{{ _('Try adjusting your search filters or check back later for new listings.') }}</p>
+                        <a href="{{ url_for('main.index') }}" class="btn btn-success">
+                            <i class="bi bi-house me-1"></i>{{ _('Back to Home') }}
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let map;
+let markers = [];
+let mapData = {{ map_data | tojson | safe }};
+let buyerLocation = {% if current_user.latitude and current_user.longitude %}[{{ current_user.latitude }}, {{ current_user.longitude }}]{% else %}null{% endif %};
+
+function initMap() {
+    const defaultLocation = buyerLocation || [20.5937, 78.9629];
+    
+    map = L.map('map').setView(defaultLocation, buyerLocation ? 10 : 5);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Add buyer location marker
+    if (buyerLocation) {
+        L.circleMarker(buyerLocation, {
+            radius: 10,
+            fillColor: "#007bff",
+            color: "#ffffff",
+            weight: 3,
+            opacity: 1,
+            fillOpacity: 0.8
+        }).addTo(map).bindPopup("{{ _('Your Location') }}");
+    }
+
+    // Add listing markers
+    updateMapMarkers();
+}
+
+function updateMapMarkers() {
+    // Clear existing markers
+    markers.forEach(marker => map.removeLayer(marker));
+    markers = [];
+
+    // Add new markers
+    mapData.forEach(listing => {
+        const marker = L.marker([listing.lat, listing.lng])
+            .addTo(map);
+
+        const popupContent = `
+            <div style="max-width: 250px;">
+                <h6 class="fw-bold">${listing.title}</h6>
+                <p class="mb-1">
+                    <strong>{{ _('Seller:') }}</strong> ${listing.seller_name}<br>
+                    <strong>{{ _('Quantity:') }}</strong> ${listing.quantity.toLocaleString()} kg<br>
+                    <strong>{{ _('Price:') }}</strong> ₹${listing.price}/kg
+                </p>
+                <button class="btn btn-success btn-sm" onclick="viewDetails('${listing.id}')">
+                    {{ _('View Details') }}
+                </button>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+    });
+}
+
+function toggleMapView() {
+    const mapContainer = document.getElementById('map');
+    if (mapContainer.style.height === '600px') {
+        mapContainer.style.height = '400px';
+    } else {
+        mapContainer.style.height = '600px';
+    }
+    setTimeout(() => map.invalidateSize(), 300);
+}
+
+function applyFilters() {
+    const riceType = document.getElementById('rice_type').value;
+    const maxDistance = document.getElementById('max_distance').value;
+    const minQuantity = document.getElementById('min_quantity').value;
+    const maxPrice = document.getElementById('max_price').value;
+
+    // Show loading state
+    document.getElementById('loading-state').style.display = 'block';
+    document.getElementById('listings-container').style.display = 'none';
+
+    // Simulate API call (in real app, make actual request)
+    setTimeout(() => {
+        filterListings(riceType, maxDistance, minQuantity, maxPrice);
+        document.getElementById('loading-state').style.display = 'none';
+        document.getElementById('listings-container').style.display = 'block';
+    }, 1000);
+}
+
+function filterListings(riceType, maxDistance, minQuantity, maxPrice) {
+    const listingItems = document.querySelectorAll('.listing-item');
+    let visibleCount = 0;
+    let totalPrice = 0;
+    let totalStock = 0;
+
+    listingItems.forEach(item => {
+        const itemRiceType = item.dataset.riceType;
+        const itemPrice = parseFloat(item.dataset.price);
+        const itemQuantity = parseFloat(item.dataset.quantity);
+        const itemDistance = parseFloat(item.dataset.distance);
+
+        let show = true;
+
+        // Filter by rice type
+        if (riceType && itemRiceType !== riceType) {
+            show = false;
+        }
+
+        // Filter by distance
+        if (maxDistance && itemDistance > parseFloat(maxDistance)) {
+            show = false;
+        }
+
+        // Filter by quantity
+        if (minQuantity && itemQuantity < parseFloat(minQuantity)) {
+            show = false;
+        }
+
+        // Filter by price
+        if (maxPrice && itemPrice > parseFloat(maxPrice)) {
+            show = false;
+        }
+
+        if (show) {
+            item.style.display = 'block';
+            visibleCount++;
+            totalPrice += itemPrice;
+            totalStock += itemQuantity;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+
+    // Update stats
+    document.getElementById('total-listings').textContent = visibleCount;
+    document.getElementById('avg-price').textContent = visibleCount > 0 ? `₹${Math.round(totalPrice / visibleCount)}/kg` : '-';
+    document.getElementById('total-stock').textContent = visibleCount > 0 ? `${Math.round(totalStock).toLocaleString()} kg` : '-';
+
+    // Show no results message
+    if (visibleCount === 0) {
+        document.getElementById('listings-grid').innerHTML = `
+            <div class="col-12">
+                <div class="no-results">
+                    <i class="bi bi-search" style="font-size: 4rem; color: #dee2e6;"></i>
+                    <h4 class="mt-3">{{ _('No listings match your filters') }}</h4>
+                    <p>{{ _('Try adjusting your search criteria.') }}</p>
+                    <button class="btn btn-outline-success" onclick="clearFilters()">
+                        {{ _('Clear Filters') }}
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function clearFilters() {
+    document.getElementById('rice_type').value = '';
+    document.getElementById('max_distance').value = '25';
+    document.getElementById('min_quantity').value = '';
+    document.getElementById('max_price').value = '';
+    applyFilters();
+}
+
+function contactSeller(sellerId, sellerName) {
+    if (confirm(`{{ _('Contact %(seller_name)s?', seller_name='${sellerName}') }}`)) {
+        fetch(`{{ url_for('buyer.contact_farmer', farmer_id='') }}${sellerId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`{{ _('Success!') }} ${data.message}\n{{ _('Mobile:') }} ${data.farmer_mobile}`);
+            } else {
+                alert("{{ _('Error contacting seller. Please try again.') }}");
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("{{ _('Error contacting seller. Please try again.') }}");
+        });
+    }
+}
+
+function viewDetails(listingId) {
+    window.location.href = `/buyer/listing/${listingId}`;
+}
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    initMap();
+});
+</script>
+{% endblock %}

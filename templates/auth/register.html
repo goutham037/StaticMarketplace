@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Register - GreenBridge') }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-success text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="bi bi-person-plus me-2"></i>{{ _('Join GreenBridge') }}
+                    </h3>
+                    <p class="mb-0 opacity-75">{{ _('Create your account to start trading') }}</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="full_name" class="form-label">
+                                    <i class="bi bi-person me-1"></i>{{ _('Full Name') }}
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="full_name" 
+                                       name="full_name" 
+                                       placeholder="{{ _('Enter your full name') }}"
+                                       required>
+                                <div class="invalid-feedback">
+                                    {{ _('Please enter your full name.') }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="mobile_number" class="form-label">
+                                    <i class="bi bi-phone me-1"></i>{{ _('Mobile Number') }}
+                                </label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="mobile_number" 
+                                       name="mobile_number" 
+                                       pattern="[0-9]{10}" 
+                                       placeholder="{{ _('10-digit mobile number') }}"
+                                       required>
+                                <div class="invalid-feedback">
+                                    {{ _('Please enter a valid 10-digit mobile number.') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="user_type" class="form-label">
+                                <i class="bi bi-person-badge me-1"></i>{{ _('Account Type') }}
+                            </label>
+                            <select class="form-select" id="user_type" name="user_type" required>
+                                <option value="buyer">{{ _('Buyer - I want to purchase rice') }}</option>
+                                <option value="seller">{{ _('Seller - I am a farmer/supplier') }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="location" class="form-label">
+                                <i class="bi bi-geo-alt me-1"></i>{{ _('Location') }}
+                            </label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="location" 
+                                       name="location" 
+                                       placeholder="{{ _('Enter your city, state') }}"
+                                       required>
+                                <button type="button" class="btn btn-outline-success" onclick="getCurrentLocation()">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                </button>
+                            </div>
+                            <input type="hidden" id="latitude" name="latitude">
+                            <input type="hidden" id="longitude" name="longitude">
+                            <div class="invalid-feedback">
+                                {{ _('Please enter your location.') }}
+                            </div>
+                        </div>
+
+                        <div id="map" class="mb-3" style="height: 250px; border-radius: 8px; display: none;"></div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">
+                                    <i class="bi bi-lock me-1"></i>{{ _('Password') }}
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="password" 
+                                       name="password" 
+                                       minlength="8" 
+                                       placeholder="{{ _('Minimum 8 characters') }}"
+                                       required>
+                                <div class="invalid-feedback">
+                                    {{ _('Password must be at least 8 characters long.') }}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label for="confirm_password" class="form-label">
+                                    <i class="bi bi-lock-fill me-1"></i>{{ _('Confirm Password') }}
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="confirm_password" 
+                                       name="confirm_password" 
+                                       placeholder="{{ _('Re-enter password') }}"
+                                       required>
+                                <div class="invalid-feedback">
+                                    {{ _('Passwords do not match.') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="bi bi-person-plus me-2"></i>{{ _('Create Account') }}
+                        </button>
+                    </form>
+
+                    <div class="text-center">
+                        <p class="text-muted">
+                            {{ _('Already have an account?') }}
+                            <a href="{{ url_for('auth.login') }}" class="text-success text-decoration-none fw-semibold">
+                                {{ _('Sign in here') }}
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let map;
+let marker;
+const defaultLocation = [20.5937, 78.9629]; // Center of India
+
+function initMap() {
+    map = L.map('map').setView(defaultLocation, 5);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    marker = L.marker(defaultLocation, {
+        draggable: true
+    }).addTo(map);
+
+    marker.on('dragend', function(event) {
+        const position = marker.getLatLng();
+        updateLocation(position);
+    });
+
+    map.on('click', function(event) {
+        marker.setLatLng(event.latlng);
+        updateLocation(event.latlng);
+    });
+}
+
+function updateLocation(latlng) {
+    document.getElementById('latitude').value = latlng.lat;
+    document.getElementById('longitude').value = latlng.lng;
+    
+    // Reverse geocoding
+    fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latlng.lat}&lon=${latlng.lng}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.display_name) {
+                document.getElementById('location').value = data.display_name;
+            }
+        })
+        .catch(error => {
+            console.error('Error getting address:', error);
+        });
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+                
+                if (!map) {
+                    document.getElementById('map').style.display = 'block';
+                    setTimeout(initMap, 100);
+                    setTimeout(() => {
+                        marker.setLatLng(latlng);
+                        map.setView(latlng, 13);
+                        updateLocation(latlng);
+                    }, 500);
+                } else {
+                    marker.setLatLng(latlng);
+                    map.setView(latlng, 13);
+                    updateLocation(latlng);
+                }
+            },
+            function() {
+                alert("{{ _('Error: Unable to get your location. Please enter manually.') }}");
+            }
+        );
+    } else {
+        alert("{{ _('Error: Your browser doesn\\'t support geolocation.') }}");
+    }
+}
+
+// Show map when location field is focused
+document.getElementById('location').addEventListener('focus', function() {
+    if (!map) {
+        document.getElementById('map').style.display = 'block';
+        setTimeout(initMap, 100);
+    }
+});
+
+// Form validation
+(function() {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirm_password');
+            
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity("{{ _('Passwords do not match') }}");
+                event.preventDefault();
+                event.stopPropagation();
+            } else {
+                confirmPassword.setCustomValidity('');
+            }
+            
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+</script>
+{% endblock %}

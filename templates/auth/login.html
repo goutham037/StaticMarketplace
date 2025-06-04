@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Login - GreenBridge') }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-success text-white text-center py-4">
+                    <h3 class="mb-0">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>{{ _('Welcome Back') }}
+                    </h3>
+                    <p class="mb-0 opacity-75">{{ _('Sign in to your GreenBridge account') }}</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-3">
+                            <label for="mobile_number" class="form-label">
+                                <i class="bi bi-phone me-1"></i>{{ _('Mobile Number') }}
+                            </label>
+                            <input type="tel" 
+                                   class="form-control form-control-lg" 
+                                   id="mobile_number" 
+                                   name="mobile_number" 
+                                   pattern="[0-9]{10}" 
+                                   placeholder="{{ _('Enter your 10-digit mobile number') }}"
+                                   required>
+                            <div class="invalid-feedback">
+                                {{ _('Please enter a valid 10-digit mobile number.') }}
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="password" class="form-label">
+                                <i class="bi bi-lock me-1"></i>{{ _('Password') }}
+                            </label>
+                            <input type="password" 
+                                   class="form-control form-control-lg" 
+                                   id="password" 
+                                   name="password" 
+                                   placeholder="{{ _('Enter your password') }}"
+                                   required>
+                            <div class="invalid-feedback">
+                                {{ _('Please enter your password.') }}
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success btn-lg w-100 mb-3">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>{{ _('Sign In') }}
+                        </button>
+                    </form>
+
+                    <div class="text-center">
+                        <p class="text-muted">
+                            {{ _('Don\'t have an account?') }}
+                            <a href="{{ url_for('auth.register') }}" class="text-success text-decoration-none fw-semibold">
+                                {{ _('Register here') }}
+                            </a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Demo Credentials -->
+            <div class="card mt-4 bg-light border-0">
+                <div class="card-body">
+                    <h6 class="card-title text-muted mb-3">
+                        <i class="bi bi-info-circle me-1"></i>{{ _('Demo Credentials') }}
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>{{ _('Buyer Account:') }}</strong><br>
+                            <small class="text-muted">{{ _('Mobile:') }} 9000000001</small><br>
+                            <small class="text-muted">{{ _('Password:') }} password123</small>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>{{ _('Seller Account:') }}</strong><br>
+                            <small class="text-muted">{{ _('Mobile:') }} 9000010001</small><br>
+                            <small class="text-muted">{{ _('Password:') }} password123</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Form validation
+(function() {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+</script>
+{% endblock %}

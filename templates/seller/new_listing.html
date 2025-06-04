@@ -1,0 +1,458 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Create New Listing - GreenBridge') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    .image-preview {
+        border: 2px dashed #198754;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        background: rgba(25, 135, 84, 0.05);
+        transition: all 0.3s ease;
+    }
+    .image-preview:hover {
+        border-color: #20c997;
+        background: rgba(32, 201, 151, 0.1);
+    }
+    .image-preview img {
+        max-width: 200px;
+        max-height: 200px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .price-calculator {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .market-info {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .quality-badge {
+        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .quality-badge.selected {
+        background: #198754 !important;
+        color: white !important;
+        transform: scale(1.05);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <a href="{{ url_for('seller.dashboard') }}" class="btn btn-outline-success me-3">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h1 class="display-6 fw-bold text-success mb-1">
+                        <i class="bi bi-plus-circle me-2"></i>{{ _('Create New Listing') }}
+                    </h1>
+                    <p class="text-muted mb-0">{{ _('Add your rice to the marketplace') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="needs-validation" novalidate>
+        <div class="row">
+            <!-- Main Form -->
+            <div class="col-lg-8">
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h4 class="text-success mb-4">
+                        <i class="bi bi-info-circle me-2"></i>{{ _('Basic Information') }}
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="rice_type" class="form-label fw-semibold">
+                                <i class="bi bi-grain me-1"></i>{{ _('Rice Type') }}
+                            </label>
+                            <select class="form-select form-select-lg" id="rice_type" name="rice_type" required onchange="updateMarketInfo()">
+                                <option value="">{{ _('Select rice type') }}</option>
+                                <option value="Basmati">{{ _('Basmati Rice') }}</option>
+                                <option value="Sona Masoori">{{ _('Sona Masoori') }}</option>
+                                <option value="Ponni">{{ _('Ponni Rice') }}</option>
+                                <option value="Brown Rice">{{ _('Brown Rice') }}</option>
+                            </select>
+                            <div class="invalid-feedback">
+                                {{ _('Please select a rice type.') }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="quality_grade" class="form-label fw-semibold">
+                                <i class="bi bi-star me-1"></i>{{ _('Quality Grade') }}
+                            </label>
+                            <div class="d-flex gap-2 mt-2">
+                                <span class="quality-badge bg-success text-white" onclick="selectQuality('A', this)">
+                                    {{ _('Grade A') }}
+                                </span>
+                                <span class="quality-badge bg-warning text-dark" onclick="selectQuality('B', this)">
+                                    {{ _('Grade B') }}
+                                </span>
+                                <span class="quality-badge bg-secondary text-white" onclick="selectQuality('C', this)">
+                                    {{ _('Grade C') }}
+                                </span>
+                            </div>
+                            <input type="hidden" id="quality_grade" name="quality_grade" value="A" required>
+                            <small class="text-muted">{{ _('Grade A: Premium quality, Grade B: Good quality, Grade C: Standard quality') }}</small>
+                        </div>
+                    </div>
+
+                    <div class="market-info" id="market-info" style="display: none;">
+                        <h6 class="fw-bold mb-2">
+                            <i class="bi bi-graph-up me-1"></i>{{ _('Market Information') }}
+                        </h6>
+                        <div id="market-details">
+                            <!-- Market info will be populated here -->
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label fw-semibold">
+                            <i class="bi bi-card-text me-1"></i>{{ _('Description') }}
+                        </label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  placeholder="{{ _('Describe your rice quality, farming methods, harvest details, etc.') }}"></textarea>
+                        <div class="form-text">{{ _('Provide detailed information to attract more buyers') }}</div>
+                    </div>
+                </div>
+
+                <!-- Quantity and Pricing -->
+                <div class="form-section">
+                    <h4 class="text-success mb-4">
+                        <i class="bi bi-calculator me-2"></i>{{ _('Quantity and Pricing') }}
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="quantity" class="form-label fw-semibold">
+                                <i class="bi bi-box me-1"></i>{{ _('Available Quantity (kg)') }}
+                            </label>
+                            <input type="number" class="form-control form-control-lg" id="quantity" name="quantity" 
+                                   min="1" step="0.1" required onchange="calculateTotal()">
+                            <div class="invalid-feedback">
+                                {{ _('Please enter the available quantity.') }}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="price_per_kg" class="form-label fw-semibold">
+                                <i class="bi bi-currency-rupee me-1"></i>{{ _('Price per kg (₹)') }}
+                            </label>
+                            <input type="number" class="form-control form-control-lg" id="price_per_kg" name="price_per_kg" 
+                                   min="1" step="0.01" required onchange="calculateTotal()">
+                            <div class="invalid-feedback">
+                                {{ _('Please enter the price per kg.') }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="price-calculator">
+                        <div class="row">
+                            <div class="col-md-4 text-center">
+                                <div class="fw-bold text-success" style="font-size: 1.5rem;" id="total-value">₹0</div>
+                                <small class="text-muted">{{ _('Total Value') }}</small>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="fw-bold text-primary" style="font-size: 1.2rem;" id="estimated-profit">₹0</div>
+                                <small class="text-muted">{{ _('Est. Profit (15%)') }}</small>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <div class="fw-bold text-warning" id="market-comparison">-</div>
+                                <small class="text-muted">{{ _('vs Market Price') }}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Image Upload -->
+                <div class="form-section">
+                    <h4 class="text-success mb-4">
+                        <i class="bi bi-image me-2"></i>{{ _('Product Images') }}
+                    </h4>
+                    
+                    <div class="image-preview" id="image-preview" onclick="document.getElementById('image-input').click()">
+                        <i class="bi bi-cloud-upload text-success mb-3" style="font-size: 3rem;"></i>
+                        <h5>{{ _('Click to upload images') }}</h5>
+                        <p class="text-muted">{{ _('Upload clear photos of your rice (optional)') }}</p>
+                        <small class="text-muted">{{ _('Supported formats: JPG, PNG, WebP (Max 5MB)') }}</small>
+                    </div>
+                    <input type="file" id="image-input" name="image" accept="image/*" style="display: none;" onchange="previewImage(this)">
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Preview Card -->
+                <div class="card border-0 shadow-sm sticky-top" style="top: 2rem;">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">
+                            <i class="bi bi-eye me-1"></i>{{ _('Listing Preview') }}
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="preview-image" class="text-center mb-3">
+                            <i class="bi bi-grain text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                        
+                        <h5 class="fw-bold" id="preview-rice-type">{{ _('Select rice type') }}</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">{{ _('Quantity:') }}</span>
+                            <span id="preview-quantity">- kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">{{ _('Price:') }}</span>
+                            <span class="fw-bold text-success" id="preview-price">₹-/kg</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="text-muted">{{ _('Quality:') }}</span>
+                            <span class="badge bg-success" id="preview-quality">{{ _('Grade A') }}</span>
+                        </div>
+                        
+                        <div class="text-muted small mb-3">
+                            <strong>{{ _('Seller:') }}</strong> {{ current_user.full_name }}<br>
+                            <strong>{{ _('Location:') }}</strong> {{ current_user.location }}
+                        </div>
+
+                        <hr>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle me-1"></i>{{ _('Publish Listing') }}
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="saveDraft()">
+                                <i class="bi bi-save me-1"></i>{{ _('Save as Draft') }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tips Card -->
+                <div class="card border-0 shadow-sm mt-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="bi bi-lightbulb text-warning me-1"></i>{{ _('Selling Tips') }}
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-unstyled small">
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-1"></i>
+                                {{ _('Use clear, well-lit photos') }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-1"></i>
+                                {{ _('Price competitively') }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-1"></i>
+                                {{ _('Provide detailed descriptions') }}
+                            </li>
+                            <li class="mb-2">
+                                <i class="bi bi-check-circle text-success me-1"></i>
+                                {{ _('Update stock regularly') }}
+                            </li>
+                            <li>
+                                <i class="bi bi-check-circle text-success me-1"></i>
+                                {{ _('Respond quickly to inquiries') }}
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Market price data
+const marketPrices = {
+    'Basmati': { min: 60, max: 80, avg: 70 },
+    'Sona Masoori': { min: 40, max: 50, avg: 45 },
+    'Ponni': { min: 40, max: 45, avg: 42 },
+    'Brown Rice': { min: 50, max: 60, avg: 55 }
+};
+
+function selectQuality(grade, element) {
+    // Remove selected class from all badges
+    document.querySelectorAll('.quality-badge').forEach(badge => {
+        badge.classList.remove('selected');
+    });
+    
+    // Add selected class to clicked badge
+    element.classList.add('selected');
+    
+    // Update hidden input
+    document.getElementById('quality_grade').value = grade;
+    
+    // Update preview
+    document.getElementById('preview-quality').textContent = `{{ _('Grade') }} ${grade}`;
+}
+
+function updateMarketInfo() {
+    const riceType = document.getElementById('rice_type').value;
+    const marketInfo = document.getElementById('market-info');
+    const marketDetails = document.getElementById('market-details');
+    
+    if (riceType && marketPrices[riceType]) {
+        const price = marketPrices[riceType];
+        marketDetails.innerHTML = `
+            <div class="row">
+                <div class="col-4 text-center">
+                    <div class="fw-bold">₹${price.min}</div>
+                    <small>{{ _('Min Price') }}</small>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="fw-bold text-success">₹${price.avg}</div>
+                    <small>{{ _('Avg Price') }}</small>
+                </div>
+                <div class="col-4 text-center">
+                    <div class="fw-bold">₹${price.max}</div>
+                    <small>{{ _('Max Price') }}</small>
+                </div>
+            </div>
+        `;
+        marketInfo.style.display = 'block';
+    } else {
+        marketInfo.style.display = 'none';
+    }
+    
+    // Update preview
+    document.getElementById('preview-rice-type').textContent = riceType || "{{ _('Select rice type') }}";
+    
+    // Update price comparison
+    calculateTotal();
+}
+
+function calculateTotal() {
+    const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+    const pricePerKg = parseFloat(document.getElementById('price_per_kg').value) || 0;
+    const riceType = document.getElementById('rice_type').value;
+    
+    const totalValue = quantity * pricePerKg;
+    const estimatedProfit = totalValue * 0.15; // 15% profit margin
+    
+    document.getElementById('total-value').textContent = `₹${totalValue.toLocaleString()}`;
+    document.getElementById('estimated-profit').textContent = `₹${estimatedProfit.toLocaleString()}`;
+    
+    // Update preview
+    document.getElementById('preview-quantity').textContent = `${quantity.toLocaleString()} kg`;
+    document.getElementById('preview-price').textContent = `₹${pricePerKg}/kg`;
+    
+    // Market comparison
+    if (riceType && marketPrices[riceType] && pricePerKg > 0) {
+        const marketAvg = marketPrices[riceType].avg;
+        const difference = pricePerKg - marketAvg;
+        const percentage = ((difference / marketAvg) * 100).toFixed(1);
+        
+        let comparisonText, comparisonClass;
+        if (difference > 0) {
+            comparisonText = `+₹${difference.toFixed(2)} (+${percentage}%)`;
+            comparisonClass = 'text-warning';
+        } else if (difference < 0) {
+            comparisonText = `₹${difference.toFixed(2)} (${percentage}%)`;
+            comparisonClass = 'text-success';
+        } else {
+            comparisonText = '{{ _("At market price") }}';
+            comparisonClass = 'text-info';
+        }
+        
+        const comparisonElement = document.getElementById('market-comparison');
+        comparisonElement.textContent = comparisonText;
+        comparisonElement.className = `fw-bold ${comparisonClass}`;
+    }
+}
+
+function previewImage(input) {
+    const previewContainer = document.getElementById('preview-image');
+    const imagePreview = document.getElementById('image-preview');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            previewContainer.innerHTML = `<img src="${e.target.result}" class="img-fluid rounded" style="max-height: 150px;">`;
+            imagePreview.innerHTML = `
+                <img src="${e.target.result}" class="mb-3">
+                <p class="text-success fw-bold">{{ _('Image uploaded successfully!') }}</p>
+                <small class="text-muted">{{ _('Click to change image') }}</small>
+            `;
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function saveDraft() {
+    // Simulate saving draft
+    showAlert("{{ _('Draft saved successfully!') }}", 'info');
+}
+
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.parentNode.removeChild(alertDiv);
+        }
+    }, 5000);
+}
+
+// Form validation
+(function() {
+    'use strict';
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(function(form) {
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+                showAlert("{{ _('Please fill in all required fields correctly.') }}", 'danger');
+            }
+            form.classList.add('was-validated');
+        }, false);
+    });
+})();
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default quality
+    document.querySelector('.quality-badge').classList.add('selected');
+});
+</script>
+{% endblock %}
