@@ -1,85 +1,77 @@
 {% extends "base.html" %}
 
-{% block title %}{{ _('GreenBridge - Connecting Farmers and Buyers') }}{% endblock %}
+{% block title %}GreenBridge - Connecting Rice Farmers & Buyers{% endblock %}
 
 {% block content %}
 <!-- Hero Section -->
-<section class="hero-section bg-success text-white py-5">
+<section class="hero-section">
     <div class="container">
         <div class="row align-items-center">
             <div class="col-lg-6">
                 <h1 class="display-4 fw-bold mb-4">
-                    {{ _('Connect. Trade. Grow.') }}
+                    Connecting Rice Farmers & Buyers
                 </h1>
                 <p class="lead mb-4">
-                    {{ _('Join India\'s premier rice trading platform connecting farmers directly with buyers. Get fair prices, reduce middlemen, and support sustainable agriculture.') }}
+                    Join India's leading rice trading platform with AI-powered market insights, 
+                    real-time pricing, and direct farmer connections.
                 </p>
-                <div class="d-flex gap-3 flex-wrap">
+                <div class="d-flex gap-3">
                     {% if not current_user.is_authenticated %}
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>{{ _('Get Started') }}
+                        <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                            <i class="bi bi-person-plus me-2"></i>Join Now
                         </a>
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>{{ _('Sign In') }}
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-light btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Login
                         </a>
                     {% else %}
                         {% if current_user.user_type == 'buyer' %}
-                            <a href="{{ url_for('buyer.dashboard') }}" class="btn btn-light btn-lg">
-                                <i class="bi bi-speedometer2 me-2"></i>{{ _('Go to Dashboard') }}
+                            <a href="{{ url_for('buyer_dashboard') }}" class="btn btn-light btn-lg">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
                             </a>
-                            <a href="{{ url_for('buyer.search') }}" class="btn btn-outline-light btn-lg">
-                                <i class="bi bi-search me-2"></i>{{ _('Search Rice') }}
+                            <a href="{{ url_for('search') }}" class="btn btn-outline-light btn-lg">
+                                <i class="bi bi-search me-2"></i>Search Rice
                             </a>
                         {% else %}
-                            <a href="{{ url_for('seller.dashboard') }}" class="btn btn-light btn-lg">
-                                <i class="bi bi-speedometer2 me-2"></i>{{ _('Go to Dashboard') }}
+                            <a href="{{ url_for('seller_dashboard') }}" class="btn btn-light btn-lg">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard
                             </a>
-                            <a href="{{ url_for('seller.new_listing') }}" class="btn btn-outline-light btn-lg">
-                                <i class="bi bi-plus-circle me-2"></i>{{ _('Create Listing') }}
+                            <a href="{{ url_for('new_listing') }}" class="btn btn-outline-light btn-lg">
+                                <i class="bi bi-plus-circle me-2"></i>New Listing
                             </a>
                         {% endif %}
                     {% endif %}
                 </div>
             </div>
             <div class="col-lg-6 text-center">
-                <img src="{{ url_for('static', filename='images/rice-hero.svg') }}" 
-                     alt="{{ _('Rice Trading') }}" 
-                     class="img-fluid" 
-                     style="max-height: 400px;">
+                <i class="bi bi-graph-up-arrow text-white" style="font-size: 8rem; opacity: 0.8;"></i>
             </div>
         </div>
     </div>
 </section>
 
 <!-- Statistics Section -->
-<section class="py-5 bg-light">
+<section class="py-5">
     <div class="container">
-        <div class="row text-center">
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <i class="bi bi-people text-success" style="font-size: 3rem;"></i>
-                        <h3 class="mt-3 text-success">{{ total_farmers }}+</h3>
-                        <p class="text-muted">{{ _('Registered Farmers') }}</p>
-                    </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <i class="bi bi-people text-primary" style="font-size: 3rem;"></i>
+                    <h3 class="mt-3 mb-2">{{ total_farmers }}</h3>
+                    <p class="text-muted">Registered Farmers</p>
                 </div>
             </div>
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <i class="bi bi-box text-success" style="font-size: 3rem;"></i>
-                        <h3 class="mt-3 text-success">{{ total_listings }}+</h3>
-                        <p class="text-muted">{{ _('Active Listings') }}</p>
-                    </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <i class="bi bi-bag text-primary" style="font-size: 3rem;"></i>
+                    <h3 class="mt-3 mb-2">{{ total_listings }}</h3>
+                    <p class="text-muted">Active Listings</p>
                 </div>
             </div>
-            <div class="col-md-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body">
-                        <i class="bi bi-grain text-success" style="font-size: 3rem;"></i>
-                        <h3 class="mt-3 text-success">{{ rice_types }}+</h3>
-                        <p class="text-muted">{{ _('Rice Varieties') }}</p>
-                    </div>
+            <div class="col-md-4">
+                <div class="stats-card">
+                    <i class="bi bi-award text-primary" style="font-size: 3rem;"></i>
+                    <h3 class="mt-3 mb-2">{{ rice_types }}</h3>
+                    <p class="text-muted">Rice Varieties</p>
                 </div>
             </div>
         </div>
@@ -87,66 +79,48 @@
 </section>
 
 <!-- Features Section -->
-<section class="py-5">
+<section class="py-5 bg-light">
     <div class="container">
         <div class="row">
-            <div class="col-lg-12 text-center mb-5">
-                <h2 class="display-5 fw-bold">{{ _('Why Choose GreenBridge?') }}</h2>
-                <p class="lead text-muted">{{ _('Revolutionary features designed for modern rice trading') }}</p>
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-6 fw-bold">Why Choose GreenBridge?</h2>
+                <p class="lead text-muted">Advanced technology meets traditional farming</p>
             </div>
         </div>
-        <div class="row">
-            <div class="col-lg-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-geo-alt text-success" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3">{{ _('Location-Based Search') }}</h4>
-                        <p class="text-muted">{{ _('Find farmers and buyers near you with our advanced location tracking and mapping system.') }}</p>
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-robot text-primary" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">AI-Powered Insights</h5>
+                        <p class="card-text">
+                            Get real-time market analysis, price predictions, and trading 
+                            recommendations powered by advanced AI technology.
+                        </p>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-robot text-success" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3">{{ _('AI Assistant') }}</h4>
-                        <p class="text-muted">{{ _('Get instant market insights, price predictions, and trading advice from our intelligent AI assistant.') }}</p>
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-geo-alt text-primary" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Location-Based Trading</h5>
+                        <p class="card-text">
+                            Find nearby farmers and buyers with our smart location system. 
+                            Reduce transportation costs and support local agriculture.
+                        </p>
                     </div>
                 </div>
             </div>
-            <div class="col-lg-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-translate text-success" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3">{{ _('Multilingual Support') }}</h4>
-                        <p class="text-muted">{{ _('Use the platform in English, Hindi, or Telugu for a seamless experience in your preferred language.') }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-graph-up text-success" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3">{{ _('Market Analysis') }}</h4>
-                        <p class="text-muted">{{ _('Access real-time market trends, price analytics, and demand forecasts to make informed decisions.') }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-shield-check text-success" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3">{{ _('Quality Assurance') }}</h4>
-                        <p class="text-muted">{{ _('Verified listings with quality grades and detailed specifications ensure you get what you expect.') }}</p>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-4 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center p-4">
-                        <i class="bi bi-chat-dots text-success" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3">{{ _('Direct Communication') }}</h4>
-                        <p class="text-muted">{{ _('Connect directly with farmers and buyers through our secure messaging system.') }}</p>
+            <div class="col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-translate text-primary" style="font-size: 3rem;"></i>
+                        <h5 class="card-title mt-3">Multilingual Support</h5>
+                        <p class="card-text">
+                            Available in English, Hindi, and Telugu to serve farmers 
+                            and traders across India in their preferred language.
+                        </p>
                     </div>
                 </div>
             </div>
@@ -154,90 +128,58 @@
     </div>
 </section>
 
-<!-- Rice Types Section -->
-<section class="py-5 bg-light">
+<!-- How It Works Section -->
+<section class="py-5">
     <div class="container">
         <div class="row">
-            <div class="col-lg-12 text-center mb-5">
-                <h2 class="display-5 fw-bold">{{ _('Popular Rice Varieties') }}</h2>
-                <p class="lead text-muted">{{ _('Trade in premium quality rice varieties') }}</p>
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-6 fw-bold">How It Works</h2>
+                <p class="lead text-muted">Simple steps to start trading</p>
             </div>
         </div>
-        <div class="row">
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <img src="{{ url_for('static', filename='images/basmati.svg') }}" 
-                         class="card-img-top p-4" 
-                         alt="{{ _('Basmati Rice') }}"
-                         style="height: 200px; object-fit: contain;">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">{{ _('Basmati Rice') }}</h5>
-                        <p class="card-text text-muted">{{ _('Premium long-grain aromatic rice') }}</p>
-                        <span class="badge bg-success">₹60-80/kg</span>
-                    </div>
+        <div class="row g-4">
+            <div class="col-lg-3 text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <span class="fs-4 fw-bold">1</span>
                 </div>
+                <h5 class="mt-3">Register</h5>
+                <p class="text-muted">Sign up as a farmer or buyer with your mobile number</p>
             </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <img src="{{ url_for('static', filename='images/sona-masoori.svg') }}" 
-                         class="card-img-top p-4" 
-                         alt="{{ _('Sona Masoori') }}"
-                         style="height: 200px; object-fit: contain;">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">{{ _('Sona Masoori') }}</h5>
-                        <p class="card-text text-muted">{{ _('Medium-grain rice popular in South India') }}</p>
-                        <span class="badge bg-success">₹40-50/kg</span>
-                    </div>
+            <div class="col-lg-3 text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <span class="fs-4 fw-bold">2</span>
                 </div>
+                <h5 class="mt-3">List or Search</h5>
+                <p class="text-muted">Farmers list rice, buyers search for quality produce</p>
             </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <img src="{{ url_for('static', filename='images/brown-rice.svg') }}" 
-                         class="card-img-top p-4" 
-                         alt="{{ _('Brown Rice') }}"
-                         style="height: 200px; object-fit: contain;">
-                    <div class="card-body text-center">
-                        <h5 class="card-title">{{ _('Brown Rice') }}</h5>
-                        <p class="card-text text-muted">{{ _('Whole grain rice with high nutritional value') }}</p>
-                        <span class="badge bg-success">₹50-60/kg</span>
-                    </div>
+            <div class="col-lg-3 text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <span class="fs-4 fw-bold">3</span>
                 </div>
+                <h5 class="mt-3">Connect</h5>
+                <p class="text-muted">Use our AI assistant to find the best matches</p>
             </div>
-            <div class="col-lg-3 col-md-6 mb-4">
-                <div class="card border-0 shadow-sm h-100">
-                    <div class="card-body text-center d-flex flex-column justify-content-center">
-                        <i class="bi bi-plus-circle text-success" style="font-size: 4rem;"></i>
-                        <h5 class="card-title mt-3">{{ _('More Varieties') }}</h5>
-                        <p class="card-text text-muted">{{ _('Explore other regional rice varieties') }}</p>
-                        {% if current_user.is_authenticated %}
-                            <a href="{{ url_for('buyer.search') }}" class="btn btn-outline-success">{{ _('Browse All') }}</a>
-                        {% else %}
-                            <a href="{{ url_for('auth.register') }}" class="btn btn-outline-success">{{ _('Join Now') }}</a>
-                        {% endif %}
-                    </div>
+            <div class="col-lg-3 text-center">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                    <span class="fs-4 fw-bold">4</span>
                 </div>
+                <h5 class="mt-3">Trade</h5>
+                <p class="text-muted">Complete transactions with confidence and transparency</p>
             </div>
         </div>
     </div>
 </section>
 
 <!-- CTA Section -->
-{% if not current_user.is_authenticated %}
-<section class="py-5 bg-success text-white">
+<section class="py-5 bg-primary text-white">
     <div class="container text-center">
-        <div class="row">
-            <div class="col-lg-8 mx-auto">
-                <h2 class="display-5 fw-bold mb-4">{{ _('Ready to Start Trading?') }}</h2>
-                <p class="lead mb-4">{{ _('Join thousands of farmers and buyers who are already benefiting from direct, fair trade.') }}</p>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-light btn-lg me-3">
-                    <i class="bi bi-person-plus me-2"></i>{{ _('Register Now') }}
-                </a>
-                <a href="{{ url_for('ai.chat') }}" class="btn btn-outline-light btn-lg">
-                    <i class="bi bi-robot me-2"></i>{{ _('Try AI Assistant') }}
-                </a>
-            </div>
-        </div>
+        <h2 class="display-6 fw-bold mb-4">Ready to Transform Your Rice Trading?</h2>
+        <p class="lead mb-4">Join thousands of farmers and buyers already using GreenBridge</p>
+        {% if not current_user.is_authenticated %}
+            <a href="{{ url_for('register') }}" class="btn btn-light btn-lg">
+                <i class="bi bi-rocket-takeoff me-2"></i>Get Started Today
+            </a>
+        {% endif %}
     </div>
 </section>
-{% endif %}
 {% endblock %}
