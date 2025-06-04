@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}{{ _('Buyer Dashboard') }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .rice-card {
+        transition: transform 0.2s;
+        cursor: pointer;
+    }
+    .rice-card:hover {
+        transform: translateY(-5px);
+    }
+    .rice-img {
+        height: 200px;
+        object-fit: cover;
+    }
+    #map {
+        height: 300px;
+        width: 100%;
+        border-radius: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">{{ _('Buyer Dashboard') }}</h1>
+    
+    <!-- Location Selection -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ _('Your Location') }}</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <button class="btn btn-primary" onclick="getCurrentLocation()">
+                            <i class="fas fa-location-arrow me-2"></i>{{ _('Use Current Location') }}
+                        </button>
+                    </div>
+                    <div class="mb-3">
+                        <label for="manualLocation" class="form-label">{{ _('Or Enter Location Manually') }}</label>
+                        <input type="text" class="form-control" id="manualLocation" 
+                               placeholder="{{ _('Enter city, state or pin code') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rice Selection -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-4">{{ _('Select Rice Type') }}</h5>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card rice-card" onclick="selectRice('basmati')">
+                        <img src="{{ url_for('static', filename='images/basmati.jpg') }}" class="card-img-top rice-img" alt="Basmati Rice">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ _('Basmati Rice') }}</h5>
+                            <p class="card-text">{{ _('Premium long-grain aromatic rice') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card rice-card" onclick="selectRice('sona-masoori')">
+                        <img src="{{ url_for('static', filename='images/sona-masoori.jpg') }}" class="card-img-top rice-img" alt="Sona Masoori">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ _('Sona Masoori') }}</h5>
+                            <p class="card-text">{{ _('Medium-grain rice popular in South India') }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card rice-card" onclick="selectRice('brown-rice')">
+                        <img src="{{ url_for('static', filename='images/brown-rice.jpg') }}" class="card-img-top rice-img" alt="Brown Rice">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ _('Brown Rice') }}</h5>
+                            <p class="card-text">{{ _('Whole grain rice with high nutritional value') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quantity Selection -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ _('Select Quantity') }}</h5>
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="quantity" min="1" value="1">
+                        <select class="form-select" id="unit">
+                            <option value="kg">{{ _('Kilograms') }}</option>
+                            <option value="quintal">{{ _('Quintals') }}</option>
+                            <option value="ton">{{ _('Tons') }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-success" onclick="findFarmers()">
+                        <i class="fas fa-search me-2"></i>{{ _('Find Nearby Farmers') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section (Initially Hidden) -->
+    <div id="results" class="card" style="display: none;">
+        <div class="card-body">
+            <h5 class="card-title">{{ _('Nearby Farmers') }}</h5>
+            <div id="farmersList" class="list-group">
+                <!-- Farmers will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map;
+let marker;
+let selectedRice = '';
+
+// Initialize map
+function initMap() {
+    map = L.map('map').setView([20.5937, 78.9629], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+    }).addTo(map);
+}
+
+// Get current location
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                updateMap(lat, lng);
+                reverseGeocode(lat, lng);
+            },
+            (error) => {
+                alert("{{ _('Error getting location. Please enter manually.') }}");
+            }
+        );
+    } else {
+        alert("{{ _('Geolocation is not supported by your browser.') }}");
+    }
+}
+
+// Update map with new location
+function updateMap(lat, lng) {
+    if (!map) {
+        initMap();
+    }
+    if (marker) {
+        marker.remove();
+    }
+    map.setView([lat, lng], 13);
+    marker = L.marker([lat, lng]).addTo(map);
+}
+
+// Select rice type
+function selectRice(type) {
+    selectedRice = type;
+    document.querySelectorAll('.rice-card').forEach(card => {
+        card.classList.remove('border-success');
+    });
+    event.currentTarget.classList.add('border-success');
+}
+
+// Find nearby farmers
+function findFarmers() {
+    if (!selectedRice) {
+        alert("{{ _('Please select a rice type.') }}");
+        return;
+    }
+
+    const quantity = document.getElementById('quantity').value;
+    const unit = document.getElementById('unit').value;
+    const location = document.getElementById('manualLocation').value;
+
+    // Show loading state
+    document.getElementById('results').style.display = 'block';
+    document.getElementById('farmersList').innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div></div>';
+
+    // Make API call to backend
+    fetch('/api/find-farmers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            riceType: selectedRice,
+            quantity: quantity,
+            unit: unit,
+            location: location
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        displayFarmers(data.farmers);
+    })
+    .catch(error => {
+        document.getElementById('farmersList').innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+    });
+}
+
+// Display farmers in the results section
+function displayFarmers(farmers) {
+    const farmersList = document.getElementById('farmersList');
+    farmersList.innerHTML = '';
+
+    if (farmers.length === 0) {
+        farmersList.innerHTML = `<div class="alert alert-info">{{ _('No farmers found in your area for the selected criteria.') }}</div>`;
+        return;
+    }
+
+    farmers.forEach(farmer => {
+        const distance = farmer.distance.toFixed(1);
+        farmersList.innerHTML += `
+            <div class="list-group-item">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">${farmer.name}</h6>
+                        <p class="mb-1">${farmer.location}</p>
+                        <small class="text-muted">{{ _('Distance') }}: ${distance} km</small>
+                    </div>
+                    <button class="btn btn-outline-success" onclick="contactFarmer('${farmer.id}')">
+                        {{ _('Contact Farmer') }}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %} 

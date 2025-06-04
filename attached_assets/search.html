@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Search Rice Listings - GreenBridge{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Search Filters</h5>
+            </div>
+            <div class="card-body">
+                <form id="searchForm" method="GET">
+                    <div class="mb-3">
+                        <label for="rice_type" class="form-label">Rice Type</label>
+                        <select class="form-select" id="rice_type" name="rice_type">
+                            <option value="">All Types</option>
+                            <option value="Basmati">Basmati</option>
+                            <option value="Sona Masoori">Sona Masoori</option>
+                            <option value="Ponni">Ponni</option>
+                            <option value="Brown Rice">Brown Rice</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Nearby Rice Mills</h5>
+            </div>
+            <div class="card-body">
+                <div id="millsList">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body p-0">
+                <div id="map" class="map-container"></div>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <h4>Available Listings</h4>
+            <div class="row" id="listingsContainer">
+                {% for listing in listings %}
+                <div class="col-md-6 mb-4">
+                    <div class="card listing-card h-100">
+                        {% if listing.image_url %}
+                        <img src="{{ listing.image_url }}" class="card-img-top" alt="{{ listing.rice_type }}">
+                        {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                            <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ listing.rice_type }}</h5>
+                            <p class="card-text">
+                                <strong>Quantity:</strong> {{ listing.quantity }} kg<br>
+                                <strong>Price:</strong> <span class="price-tag">₹{{ listing.price_per_kg }}/kg</span>
+                            </p>
+                            <a href="{{ url_for('buyer.view_listing', id=listing.id) }}" class="btn btn-success w-100">
+                                View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let map;
+let markers = [];
+const listings = {{ map_listings | tojson | safe }};
+const buyerLocation = {{ buyer_location | tojson | safe if buyer_location else 'null' }};
+
+function initMap() {
+    const defaultLocation = buyerLocation ? [buyerLocation.lat, buyerLocation.lng] : [20.5937, 78.9629]; // Center of India
+    
+    // Initialize the map
+    map = L.map('map').setView(defaultLocation, buyerLocation ? 12 : 5);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    if (buyerLocation) {
+        // Add buyer location marker
+        L.circleMarker([buyerLocation.lat, buyerLocation.lng], {
+            radius: 8,
+            fillColor: "#4285F4",
+            color: "#FFFFFF",
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1
+        }).addTo(map).bindPopup("Your Location");
+    }
+
+    // Add markers for listings
+    listings.forEach(listing => {
+        const marker = L.marker([listing.position.lat, listing.position.lng])
+            .addTo(map);
+
+        const popupContent = `
+            <div style="max-width: 200px;">
+                <h6>${listing.title}</h6>
+                <p>
+                    <strong>Seller:</strong> ${listing.seller_name}<br>
+                    <strong>Quantity:</strong> ${listing.quantity} kg
+                </p>
+                <a href="/buyer/listing/${listing.id}" class="btn btn-sm btn-success">View Details</a>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+    });
+
+    // Load nearby mills
+    loadNearbyMills();
+}
+
+function loadNearbyMills() {
+    if (!buyerLocation) {
+        document.getElementById('millsList').innerHTML = 
+            '<p class="text-muted text-center">Please set your location to see nearby mills</p>';
+        return;
+    }
+
+    // Use OpenStreetMap's Overpass API to find rice mills
+    const overpassQuery = `
+        [out:json][timeout:25];
+        (
+            node["industrial"="rice_mill"](around:5000,${buyerLocation.lat},${buyerLocation.lng});
+            way["industrial"="rice_mill"](around:5000,${buyerLocation.lat},${buyerLocation.lng});
+            relation["industrial"="rice_mill"](around:5000,${buyerLocation.lat},${buyerLocation.lng});
+        );
+        out body;
+        >;
+        out skel qt;
+    `;
+
+    fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: overpassQuery
+    })
+        .then(response => response.json())
+        .then(data => {
+            const mills = data.elements.filter(e => e.type === 'node').map(mill => ({
+                name: mill.tags.name || 'Rice Mill',
+                location: {
+                    lat: mill.lat,
+                    lng: mill.lon
+                },
+                address: mill.tags.address || 'Address not available'
+            }));
+
+            const millsHtml = mills.map(mill => `
+                <div class="mb-3">
+                    <h6>${mill.name}</h6>
+                    <p class="mb-1 small text-muted">${mill.address}</p>
+                </div>
+            `).join('') || '<p class="text-muted text-center">No mills found nearby</p>';
+            
+            document.getElementById('millsList').innerHTML = millsHtml;
+
+            // Add mill markers to map
+            mills.forEach(mill => {
+                const marker = L.marker([mill.location.lat, mill.location.lng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-yellow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34]
+                    })
+                }).addTo(map);
+
+                const popupContent = `
+                    <div style="max-width: 200px;">
+                        <h6>${mill.name}</h6>
+                        <p>${mill.address}</p>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent);
+                markers.push(marker);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading nearby mills:', error);
+            document.getElementById('millsList').innerHTML = 
+                '<p class="text-danger text-center">Error loading nearby mills</p>';
+        });
+}
+
+// Initialize map when the page loads
+window.addEventListener('load', initMap);
+</script>
+{% endblock %} 

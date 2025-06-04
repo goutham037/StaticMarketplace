@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}AI Assistant - GreenBridge{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">AI Assistant</h4>
+                <button class="btn btn-outline-light btn-sm" onclick="clearChat()">
+                    <i class="bi bi-trash"></i> Clear Chat
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="chat-messages" class="chat-container mb-3">
+                    <div class="system-message">
+                        Hello! I'm your GreenBridge AI assistant. I can help you with:
+                        <ul>
+                            <li>Market analysis and trends</li>
+                            <li>Price predictions</li>
+                            <li>Rice quality information</li>
+                            <li>Storage and handling tips</li>
+                            <li>General rice trading queries</li>
+                        </ul>
+                        How can I assist you today?
+                    </div>
+                    {% for message in chat_history %}
+                    <div class="message user-message">
+                        <div class="message-content">{{ message.message }}</div>
+                        <div class="message-time">{{ message.created_at.strftime('%H:%M') }}</div>
+                    </div>
+                    <div class="message ai-message">
+                        <div class="message-content">{{ message.response }}</div>
+                        <div class="message-time">{{ message.created_at.strftime('%H:%M') }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <form id="chat-form" class="d-flex gap-2">
+                    <input type="text" id="message-input" class="form-control" 
+                           placeholder="Type your message here..." required>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.chat-container {
+    height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.message {
+    margin-bottom: 1rem;
+    max-width: 80%;
+}
+
+.user-message {
+    margin-left: auto;
+}
+
+.ai-message {
+    margin-right: auto;
+}
+
+.message-content {
+    padding: 0.75rem;
+    border-radius: 1rem;
+}
+
+.user-message .message-content {
+    background-color: #198754;
+    color: white;
+    border-bottom-right-radius: 0.25rem;
+}
+
+.ai-message .message-content {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-bottom-left-radius: 0.25rem;
+}
+
+.system-message {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+.system-message ul {
+    margin-bottom: 0;
+    padding-left: 1.25rem;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const chatMessages = document.getElementById('chat-messages');
+const chatForm = document.getElementById('chat-form');
+const messageInput = document.getElementById('message-input');
+
+chatForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const message = messageInput.value.trim();
+    if (!message) return;
+
+    // Add user message to chat
+    appendMessage(message, true);
+    messageInput.value = '';
+    messageInput.disabled = true;
+
+    try {
+        const response = await fetch('{{ url_for("ai.chat") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            appendMessage(data.response, false);
+        } else {
+            appendMessage('Sorry, I encountered an error. Please try again.', false);
+        }
+    } catch (error) {
+        appendMessage('Sorry, I encountered an error. Please try again.', false);
+    }
+
+    messageInput.disabled = false;
+    messageInput.focus();
+});
+
+function appendMessage(content, isUser) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.textContent = content;
+    
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'message-time';
+    timeDiv.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    
+    messageDiv.appendChild(contentDiv);
+    messageDiv.appendChild(timeDiv);
+    
+    chatMessages.appendChild(messageDiv);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function clearChat() {
+    const systemMessage = chatMessages.firstElementChild;
+    chatMessages.innerHTML = '';
+    if (systemMessage) {
+        chatMessages.appendChild(systemMessage);
+    }
+}
+
+// Scroll to bottom on load
+chatMessages.scrollTop = chatMessages.scrollHeight;
+</script>
+{% endblock %} 

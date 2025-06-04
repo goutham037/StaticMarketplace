@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Market Analysis - GreenBridge{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Market Analysis</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Market Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for rice_type, data in analysis.items() %}
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ rice_type }}</h5>
+                                    <div class="mb-3">
+                                        <strong>Average Price:</strong> 
+                                        <span class="price-tag">₹{{ data.average_price }}/kg</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong>Price Trend:</strong>
+                                        <span class="badge bg-{{ 'success' if data.price_trend == 'increasing' 
+                                                               else 'danger' if data.price_trend == 'decreasing'
+                                                               else 'secondary' }}">
+                                            {{ data.price_trend|title }}
+                                        </span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <strong>Demand:</strong>
+                                        <span class="badge bg-{{ 'success' if data.demand_level == 'high'
+                                                               else 'warning' if data.demand_level == 'medium'
+                                                               else 'danger' }}">
+                                            {{ data.demand_level|title }}
+                                        </span>
+                                    </div>
+                                    <div class="insights">
+                                        {{ data.insights }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Price Prediction Tool</h5>
+                </div>
+                <div class="card-body">
+                    <form id="prediction-form" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="rice_type" class="form-label">Rice Type</label>
+                            <select class="form-select" id="rice_type" name="rice_type" required>
+                                <option value="">Select Rice Type</option>
+                                <option value="Basmati">Basmati</option>
+                                <option value="Sona Masoori">Sona Masoori</option>
+                                <option value="Ponni">Ponni</option>
+                                <option value="Brown Rice">Brown Rice</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="quantity" class="form-label">Quantity (kg)</label>
+                            <input type="number" class="form-control" id="quantity" name="quantity" 
+                                   min="1" step="0.1" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-success w-100">
+                                Predict Price
+                            </button>
+                        </div>
+                    </form>
+                    <div id="prediction-result" class="mt-3" style="display: none;">
+                        <div class="alert alert-success">
+                            <h6 class="mb-2">Predicted Price:</h6>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="h4 mb-0">₹<span id="predicted-price">0</span>/kg</span>
+                                <span class="text-muted">
+                                    Confidence: <span id="confidence">0</span>%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Market Insights</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Price Trends</h6>
+                        <div id="price-trends-chart"></div>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Supply & Demand</h6>
+                        <div id="supply-demand-chart"></div>
+                    </div>
+                    <div>
+                        <h6>Recommendations</h6>
+                        <ul class="list-unstyled">
+                            {% for rice_type, data in analysis.items() %}
+                                {% if data.price_trend == 'decreasing' and data.demand_level == 'high' %}
+                                <li class="mb-2">
+                                    <i class="bi bi-arrow-up-circle text-success"></i>
+                                    Consider buying {{ rice_type }} - prices are low with high demand
+                                </li>
+                                {% endif %}
+                                {% if data.price_trend == 'increasing' and data.demand_level == 'high' %}
+                                <li class="mb-2">
+                                    <i class="bi bi-arrow-right-circle text-warning"></i>
+                                    {{ rice_type }} market is bullish - expect higher prices
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.price-tag {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #198754;
+}
+
+.insights {
+    font-size: 0.9em;
+    color: #6c757d;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #dee2e6;
+}
+
+.badge {
+    font-size: 0.8em;
+    padding: 0.5em 0.7em;
+}
+
+.badge-available {
+    background-color: #198754;
+    color: white;
+}
+
+.badge-sold {
+    background-color: #dc3545;
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Price Prediction Form
+document.getElementById('prediction-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    const data = {
+        rice_type: formData.get('rice_type'),
+        quantity: formData.get('quantity')
+    };
+
+    try {
+        const response = await fetch('{{ url_for("ai.price_prediction") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+        if (response.ok && result.predicted_price) {
+            document.getElementById('predicted-price').textContent = result.predicted_price;
+            document.getElementById('confidence').textContent = Math.round(result.confidence * 100);
+            document.getElementById('prediction-result').style.display = 'block';
+        } else {
+            alert('Unable to predict price. Please try again.');
+        }
+    } catch (error) {
+        alert('Error occurred while predicting price.');
+    }
+});
+
+// Example charts (you can replace with real data)
+const priceCtx = document.getElementById('price-trends-chart').getContext('2d');
+new Chart(priceCtx, {
+    type: 'line',
+    data: {
+        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+        datasets: [{
+            label: 'Average Price Trend',
+            data: [65, 59, 80, 81, 56, 55],
+            borderColor: '#198754',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+const supplyCtx = document.getElementById('supply-demand-chart').getContext('2d');
+new Chart(supplyCtx, {
+    type: 'bar',
+    data: {
+        labels: ['Basmati', 'Sona Masoori', 'Ponni', 'Brown Rice'],
+        datasets: [{
+            label: 'Supply vs Demand',
+            data: [12, 19, 3, 5],
+            backgroundColor: '#198754'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+</script>
+{% endblock %} 
