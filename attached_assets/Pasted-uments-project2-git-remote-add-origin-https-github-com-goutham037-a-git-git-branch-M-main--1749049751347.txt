@@ -1,0 +1,35 @@
+uments\project2> git remote add origin https://github.com/goutham037/a.git
+>> git branch -M main
+>> git push -u origin main
+git : The term 'git' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or 
+if a path was included, verify that the path is correct and try again.
+At line:1 char:1
++ git remote add origin https://github.com/goutham037/a.git
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (git:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+git : The term 'git' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or 
+if a path was included, verify that the path is correct and try again.
+At line:2 char:1
++ git branch -M main
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (git:String) [], CommandNotFoundException
+git : The term 'git' is not recognized as the name of a cmdlet, function, script file, or operable program. Check the spelling of the name, or   
+if a path was included, verify that the path is correct and try again.
+At line:3 char:1
++ git push -u origin main
++ ~~~
+    + CategoryInfo          : ObjectNotFound: (git:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 
+PS C:\Users\palla\Documents\project2>
+PS C:\Users\palla\Documents\project2> https://github.com/goutham037/a.git
+https://github.com/goutham037/a.git : The term 'https://github.com/goutham037/a.git' is not recognized as the name of a cmdlet, function, 
+script file, or operable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again.      
+At line:1 char:1
++ https://github.com/goutham037/a.git
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : ObjectNotFound: (https://github.com/goutham037/a.git:String) [], CommandNotFoundException
+    + FullyQualifiedErrorId : CommandNotFoundException
+ 

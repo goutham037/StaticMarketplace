@@ -396,27 +396,62 @@ def chat():
 @app.route('/ai/chat', methods=['POST'])
 @login_required
 def chat_message():
-    data = request.get_json()
-    message = data.get('message', '')
-    
-    # Get AI response
-    response = get_ai_response(message, current_user)
-    
-    # Save chat message
-    chat_msg = ChatMessage(
-        user_id=current_user.id,
-        message=message,
-        response=response,
-        message_type='general'
-    )
-    
-    db.session.add(chat_msg)
-    db.session.commit()
-    
-    return jsonify({
-        'response': response,
-        'timestamp': chat_msg.created_at.isoformat()
-    })
+    try:
+        data = request.get_json()
+        message = data.get('message', '').strip()
+        
+        if not message:
+            return jsonify({'error': 'No message provided'}), 400
+        
+        # Get real-time AI response with live market data
+        response = get_ai_response(message, current_user)
+        
+        # Save chat message
+        chat_msg = ChatMessage(
+            user_id=current_user.id,
+            message=message,
+            response=response,
+            message_type='general',
+            created_at=datetime.now(timezone.utc)
+        )
+        
+        db.session.add(chat_msg)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'response': response,
+            'timestamp': datetime.now(timezone.utc).strftime('%H:%M:%S'),
+            'message_id': chat_msg.id
+        })
+        
+    except Exception as e:
+        logging.error(f"Chat API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to process message'
+        }), 500
+
+@app.route('/api/market-data')
+@login_required
+def api_market_data():
+    """Real-time market data API"""
+    try:
+        from ai_service import get_real_time_market_data
+        market_data = get_real_time_market_data()
+        
+        return jsonify({
+            'success': True,
+            'data': market_data,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+        
+    except Exception as e:
+        logging.error(f"Market data API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch market data'
+        }), 500
 
 @app.route('/ai/market-analysis')
 @login_required
