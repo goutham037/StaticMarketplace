@@ -1,9 +1,11 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify, g
 from flask_login import login_user, logout_user, login_required, current_user
 from flask_babel import _, get_locale
-from models import User, RiceListing, ChatMessage, MarketAnalysis, db
+from models import User, RiceListing, ChatMessage, MarketAnalysis
+from application import db
 from ai_service import get_ai_response, get_market_analysis, get_price_prediction
 from utils import geocode_location, calculate_distance
+from werkzeug.security import check_password_hash, generate_password_hash
 import json
 from datetime import datetime
 

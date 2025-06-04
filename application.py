@@ -50,8 +50,6 @@ def create_app():
     
     # Login manager configuration
     login_manager.login_view = 'auth.login'
-    login_manager.login_message = 'Please log in to access this page.'
-    login_manager.login_message_category = 'info'
     
     @login_manager.user_loader
     def load_user(user_id):
@@ -59,14 +57,13 @@ def create_app():
         return User.query.get(int(user_id))
     
     # Babel locale selector
-    @babel.localeselector
-    def get_locale():
-        from flask import session, request
-        # 1. If a user is logged in and has set a language preference, use that
+    @app.before_request
+    def before_request():
+        from flask import session, request, g
         if 'language' in session:
-            return session['language']
-        # 2. Otherwise, try to guess the language from the user accept header
-        return request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or 'en'
+            g.locale = session['language']
+        else:
+            g.locale = request.accept_languages.best_match(app.config['LANGUAGES'].keys()) or 'en'
     
     # Create database tables
     with app.app_context():
@@ -78,9 +75,13 @@ def create_app():
         # Create sample data for demo
         models.create_sample_data()
     
-    # Register routes after app creation
-    with app.app_context():
-        import routes
+    # Register blueprints
+    from routes import main_bp, auth_bp, buyer_bp, seller_bp, ai_bp
+    app.register_blueprint(main_bp)
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(buyer_bp, url_prefix='/buyer')
+    app.register_blueprint(seller_bp, url_prefix='/seller')
+    app.register_blueprint(ai_bp, url_prefix='/ai')
     
     # Context processors
     @app.context_processor
